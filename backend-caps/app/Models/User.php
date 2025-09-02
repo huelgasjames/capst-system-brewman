@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasFactory;
+    /**
+     * The primary key for the model (database uses user_id instead of id).
+     */
+    protected $primaryKey = 'user_id';
 
-    protected $table = 'users'; // Your DB table
-    protected $primaryKey = 'user_id'; // Adjust if not "id"
+    /**
+     * Disable default Laravel timestamps as the table has no updated_at.
+     */
+    public $timestamps = false;
 
     protected $fillable = [
         'name',
@@ -22,11 +26,6 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
-
-    // Example relation: user belongs to branch
-    public function branch()
-    {
-        return $this->belongsTo(Branch::class, 'branch_id', 'branch_id');
-    }
 }

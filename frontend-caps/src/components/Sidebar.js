@@ -19,6 +19,7 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import bmLogo from '../BM-Logo.png';
+import { Link } from 'react-router-dom';
 
 const drawerWidth = 260;
 
@@ -69,7 +70,7 @@ function Sidebar() {
           </AccordionSummary>
           <AccordionDetails>
             <List disablePadding>
-              <ListItemButton sx={{ pl: 4 }}>
+              <ListItemButton sx={{ pl: 4 }} component={Link} to="/account/users">
                 <ListItemText primary="Users" />
               </ListItemButton>
               <ListItemButton sx={{ pl: 4 }}>

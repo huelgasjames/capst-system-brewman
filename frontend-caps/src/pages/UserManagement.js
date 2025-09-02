@@ -9,7 +9,9 @@ function UserManagement() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    role: '',
+    branch_id: ''
   });
 
   // Backend API URL - adjust this to match your Laravel backend
@@ -19,13 +21,39 @@ function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/users`);
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Expected JSON, received: ${text.substring(0, 120)}`);
+      }
+
       const data = await response.json();
-      
-      if (data.success) {
-        setUsers(data.data);
+
+      // Support multiple shapes: array, {data: [...]}, or {users: [...]}
+      const usersArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.users)
+        ? data.users
+        : [];
+
+      setUsers(usersArray);
+      if (!Array.isArray(usersArray)) {
+        setError('Unexpected users response shape');
       } else {
-        setError('Failed to fetch users');
+        setError(null);
       }
     } catch (err) {
       setError('Error connecting to backend: ' + err.message);
@@ -44,24 +72,40 @@ function UserManagement() {
       
       const method = editingUser ? 'PUT' : 'POST';
       
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        branch_id: formData.branch_id ? Number(formData.branch_id) : undefined,
+      };
+      if (!editingUser || (formData.password && formData.password.trim() !== '')) {
+        payload.password = formData.password;
+      }
+
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
-        await fetchUsers(); // Refresh the list
-        resetForm();
-        alert(editingUser ? 'User updated successfully!' : 'User created successfully!');
-      } else {
-        setError('Failed to save user');
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
       }
+
+      // Attempt to parse JSON, but tolerate empty body (204)
+      let data = null;
+      const respText = await response.text();
+      if (respText) {
+        try { data = JSON.parse(respText); } catch (_) { /* ignore parse error */ }
+      }
+
+      await fetchUsers(); // Refresh the list
+      resetForm();
+      alert(editingUser ? 'User updated successfully!' : 'User created successfully!');
     } catch (err) {
       setError('Error saving user: ' + err.message);
     }
@@ -78,14 +122,13 @@ function UserManagement() {
           }
         });
         
-        const data = await response.json();
-        
-        if (data.success) {
-          await fetchUsers(); // Refresh the list
-          alert('User deleted successfully!');
-        } else {
-          setError('Failed to delete user');
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
         }
+
+        await fetchUsers(); // Refresh the list
+        alert('User deleted successfully!');
       } catch (err) {
         setError('Error deleting user: ' + err.message);
       }
@@ -94,7 +137,7 @@ function UserManagement() {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '' });
+    setFormData({ name: '', email: '', password: '', role: '', branch_id: '' });
     setEditingUser(null);
     setShowForm(false);
   };
@@ -104,7 +147,9 @@ function UserManagement() {
     setFormData({
       name: user.name,
       email: user.email,
-      password: '' // Don't pre-fill password
+      password: '', // Don't pre-fill password
+      role: user.role || '',
+      branch_id: user.branch_id != null ? String(user.branch_id) : ''
     });
     setEditingUser(user);
     setShowForm(true);
@@ -199,6 +244,28 @@ function UserManagement() {
                 style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
               />
             </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Role:</label>
+              <input
+                type="text"
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                required
+                placeholder="Owner / Branch Manager / Cashier / Barista / Staff"
+                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Branch ID:</label>
+              <input
+                type="number"
+                value={formData.branch_id}
+                onChange={(e) => setFormData({...formData, branch_id: e.target.value})}
+                required
+                min="1"
+                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
             <div>
               <button 
                 type="submit"
@@ -248,6 +315,8 @@ function UserManagement() {
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Email</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Role</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Branch</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Created</th>
                 <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
               </tr>
@@ -258,8 +327,10 @@ function UserManagement() {
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.id}</td>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.name}</td>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.email}</td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.role || '-'}</td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.branch_id != null ? user.branch_id : '-'}</td>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>
                     <button 

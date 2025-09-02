@@ -1,4 +1,5 @@
 import React from 'react';
+import { Outlet } from 'react-router-dom';
 import {
   Box,
   AppBar,
@@ -13,7 +14,7 @@ import {
 } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 
-function DashboardLayout({ children }) {
+function DashboardLayout() {
   const theme = useTheme();
 
   return (
@@ -88,7 +89,7 @@ function DashboardLayout({ children }) {
           p: 3,
         }}
       >
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );
