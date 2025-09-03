@@ -10,12 +10,41 @@ function UserManagement() {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     role: '',
     branch_id: ''
   });
+  const [passwordError, setPasswordError] = useState('');
 
   // Backend API URL - adjust this to match your Laravel backend
   const API_BASE_URL = 'http://localhost:8000/api';
+
+  // Validate password match
+  const validatePasswords = (password, confirmPassword) => {
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return false;
+    }
+    if (password.length > 0 && password.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  // Handle password field changes
+  const handlePasswordChange = (field, value) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    
+    // Validate passwords if both fields have values
+    if (newFormData.password || newFormData.confirmPassword) {
+      validatePasswords(newFormData.password, newFormData.confirmPassword);
+    } else {
+      setPasswordError('');
+    }
+  };
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -63,8 +92,27 @@ function UserManagement() {
   };
 
   // Create or update user
-  const saveUser = async (e) => {
-    e.preventDefault();
+  const saveUser = async () => {
+    
+    // Validate passwords before submission
+    const passwordsValid = validatePasswords(formData.password, formData.confirmPassword);
+    
+    // For new users, password is required
+    if (!editingUser && !formData.password) {
+      setPasswordError('Password is required');
+      return;
+    }
+    
+    // For existing users, only validate if password is being changed
+    if (editingUser && formData.password && !passwordsValid) {
+      return;
+    }
+    
+    // For new users, passwords must match
+    if (!editingUser && !passwordsValid) {
+      return;
+    }
+    
     try {
       const url = editingUser 
         ? `${API_BASE_URL}/users/${editingUser.id}`
@@ -137,9 +185,10 @@ function UserManagement() {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', role: '', branch_id: '' });
+    setFormData({ name: '', email: '', password: '', confirmPassword: '', role: '', branch_id: '' });
     setEditingUser(null);
     setShowForm(false);
+    setPasswordError('');
   };
 
   // Edit user
@@ -148,11 +197,13 @@ function UserManagement() {
       name: user.name,
       email: user.email,
       password: '', // Don't pre-fill password
+      confirmPassword: '', // Don't pre-fill confirm password
       role: user.role || '',
       branch_id: user.branch_id != null ? String(user.branch_id) : ''
     });
     setEditingUser(user);
     setShowForm(true);
+    setPasswordError('');
   };
 
   // Load users on component mount
@@ -211,7 +262,7 @@ function UserManagement() {
           background: '#f9f9f9'
         }}>
           <h3>{editingUser ? 'Edit User' : 'Add New User'}</h3>
-          <form onSubmit={saveUser}>
+          <div>
             <div style={{ marginBottom: '10px' }}>
               <label style={{ display: 'block', marginBottom: '5px' }}>Name:</label>
               <input
@@ -239,10 +290,41 @@ function UserManagement() {
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => handlePasswordChange('password', e.target.value)}
                 required={!editingUser}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  border: passwordError && formData.password ? '1px solid #f44336' : '1px solid #ddd', 
+                  borderRadius: '4px' 
+                }}
               />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>
+                Confirm Password {editingUser && '(leave blank to keep current)'}:
+              </label>
+              <input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                required={!editingUser || formData.password !== ''}
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  border: passwordError && formData.confirmPassword ? '1px solid #f44336' : '1px solid #ddd', 
+                  borderRadius: '4px' 
+                }}
+              />
+              {passwordError && (
+                <div style={{ 
+                  color: '#f44336', 
+                  fontSize: '14px', 
+                  marginTop: '5px' 
+                }}>
+                  {passwordError}
+                </div>
+              )}
             </div>
             <div style={{ marginBottom: '10px' }}>
               <label style={{ display: 'block', marginBottom: '5px' }}>Role:</label>
@@ -268,14 +350,16 @@ function UserManagement() {
             </div>
             <div>
               <button 
-                type="submit"
+                type="button"
+                onClick={saveUser}
+                disabled={passwordError !== ''}
                 style={{
-                  background: '#4caf50',
+                  background: passwordError ? '#ccc' : '#4caf50',
                   color: 'white',
                   border: 'none',
                   padding: '10px 20px',
                   borderRadius: '4px',
-                  cursor: 'pointer',
+                  cursor: passwordError ? 'not-allowed' : 'pointer',
                   marginRight: '10px'
                 }}
               >
@@ -296,7 +380,7 @@ function UserManagement() {
                 Cancel
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
