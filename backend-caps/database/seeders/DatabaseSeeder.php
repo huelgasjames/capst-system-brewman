@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Branch;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,11 +14,50 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create branches first
+        $this->call([
+            BranchSeeder::class,
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create sample users with roles and branch assignments
+        User::create([
+            'name' => 'John Manager',
+            'email' => 'john.manager@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'Branch Manager',
+            'branch_id' => 1, // Main Branch
+        ]);
+
+        User::create([
+            'name' => 'Sarah Cashier',
+            'email' => 'sarah.cashier@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'Cashier',
+            'branch_id' => 1, // Main Branch
+        ]);
+
+        User::create([
+            'name' => 'Mike Barista',
+            'email' => 'mike.barista@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'Barista',
+            'branch_id' => 1, // Main Branch
+        ]);
+
+        User::create([
+            'name' => 'Lisa Manager',
+            'email' => 'lisa.manager@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'Branch Manager',
+            'branch_id' => 2, // Mall Branch
+        ]);
+
+        User::create([
+            'name' => 'David Cashier',
+            'email' => 'david.cashier@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'Cashier',
+            'branch_id' => 2, // Mall Branch
         ]);
     }
 }

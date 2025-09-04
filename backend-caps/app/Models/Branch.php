@@ -11,6 +11,9 @@ class Branch extends Model
 
     protected $table = 'branches';
     protected $primaryKey = 'branch_id';
+    
+    // Disable timestamps since the table doesn't have updated_at column
+    public $timestamps = false;
 
     protected $fillable = [
         'branch_name',
@@ -27,5 +30,18 @@ class Branch extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class, 'branch_id', 'branch_id');
+    }
+
+    // Get branch manager (user with role 'Branch Manager')
+    public function branchManager()
+    {
+        return $this->hasOne(User::class, 'branch_id', 'branch_id')
+                    ->where('role', 'Branch Manager');
+    }
+
+    // Get all staff assigned to this branch
+    public function staff()
+    {
+        return $this->hasMany(User::class, 'branch_id', 'branch_id');
     }
 }

@@ -17,6 +17,7 @@ import {
   Inventory2 as InventoryIcon,
   ReceiptLong as ReceiptIcon,
   Settings as SettingsIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import bmLogo from '../BM-Logo.png';
 import { Link } from 'react-router-dom';
@@ -78,6 +79,25 @@ function Sidebar() {
               </ListItemButton>
               <ListItemButton sx={{ pl: 4 }}>
                 <ListItemText primary="Permissions" />
+              </ListItemButton>
+            </List>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion disableGutters elevation={0} sx={{ bgcolor: 'transparent' }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BusinessIcon fontSize="small" />
+              <Typography>Branch Management</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <List disablePadding>
+              <ListItemButton sx={{ pl: 4 }} component={Link} to="/branches">
+                <ListItemText primary="Branches" />
+              </ListItemButton>
+              <ListItemButton sx={{ pl: 4 }}>
+                <ListItemText primary="Branch Overview" />
               </ListItemButton>
             </List>
           </AccordionDetails>

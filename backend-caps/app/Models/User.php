@@ -12,9 +12,9 @@ class User extends Authenticatable
     protected $primaryKey = 'user_id';
 
     /**
-     * Disable default Laravel timestamps as the table has no updated_at.
+     * Enable timestamps for the model.
      */
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'name',
@@ -28,4 +28,12 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * Get the branch that the user belongs to
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id', 'branch_id');
+    }
 }
