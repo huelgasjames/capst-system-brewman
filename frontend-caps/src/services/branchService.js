@@ -1,11 +1,21 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 export const branchService = {
   // Get all branches with their users
   async getAllBranches() {
     try {
-      const response = await fetch(`${API_BASE_URL}/branches`);
+      console.log('Fetching branches from:', `${API_BASE_URL}/branches`);
+      const response = await fetch(`${API_BASE_URL}/branches`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch branches');

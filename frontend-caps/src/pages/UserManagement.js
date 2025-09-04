@@ -1,118 +1,196 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  IconButton,
+  Chip,
+  Avatar,
+  Divider,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Tooltip,
+  Fab,
+  Switch,
+  FormControlLabel,
+  InputAdornment,
+  OutlinedInput,
+  ListItemText,
+  Checkbox,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Business as BusinessIcon,
+  Security as SecurityIcon,
+  Visibility as ViewIcon,
+  VisibilityOff as ViewOffIcon,
+  Assignment as AssignmentIcon,
+  RemoveCircle as RemoveIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
+import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
 
 function UserManagement() {
+  const { admin, getAuthHeaders } = useAuth();
   const [users, setUsers] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openBranchDialog, setOpenBranchDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     role: '',
-    branch_id: ''
+    branch_id: '',
   });
+  const [branchAssignment, setBranchAssignment] = useState({
+    branch_id: '',
+    role: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
-  // Backend API URL - adjust this to match your Laravel backend
-  const API_BASE_URL = 'http://localhost:8000/api';
+  const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
-  // Validate password match
-  const validatePasswords = (password, confirmPassword) => {
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return false;
+  useEffect(() => {
+    fetchUsers();
+    fetchBranches();
+  }, []);
+
+  const fetchBranches = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/branches`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Ensure branches is always an array, handle different response structures
+        const branchesArray = Array.isArray(data) ? data : 
+                             Array.isArray(data.data) ? data.data : 
+                             Array.isArray(data.branches) ? data.branches : [];
+        setBranches(branchesArray);
+      } else {
+        console.error('Failed to fetch branches');
+        setBranches([]); // Set empty array on error
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      setBranches([]); // Set empty array on error
     }
-    if (password.length > 0 && password.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
-      return false;
-    }
-    setPasswordError('');
-    return true;
   };
 
-  // Handle password field changes
-  const handlePasswordChange = (field, value) => {
-    const newFormData = { ...formData, [field]: value };
-    setFormData(newFormData);
-    
-    // Validate passwords if both fields have values
-    if (newFormData.password || newFormData.confirmPassword) {
-      validatePasswords(newFormData.password, newFormData.confirmPassword);
-    } else {
-      setPasswordError('');
-    }
-  };
-
-  // Fetch users from backend
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/users`, {
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
-      }
-
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        const text = await response.text();
-        throw new Error(`Expected JSON, received: ${text.substring(0, 120)}`);
-      }
-
-      const data = await response.json();
-
-      // Support multiple shapes: array, {data: [...]}, or {users: [...]}
-      const usersArray = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.users)
-        ? data.users
-        : [];
-
-      setUsers(usersArray);
-      if (!Array.isArray(usersArray)) {
-        setError('Unexpected users response shape');
+      if (response.ok) {
+        const data = await response.json();
+        // Ensure users is always an array, handle different response structures
+        const usersArray = Array.isArray(data) ? data : 
+                          Array.isArray(data.data) ? data.data : 
+                          Array.isArray(data.users) ? data.users : [];
+        setUsers(usersArray);
       } else {
-        setError(null);
+        console.error('Failed to fetch users');
+        setUsers([]); // Set empty array on error
       }
-    } catch (err) {
-      setError('Error connecting to backend: ' + err.message);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setUsers([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
   };
 
-  // Create or update user
-  const saveUser = async () => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
     
-    // Validate passwords before submission
-    const passwordsValid = validatePasswords(formData.password, formData.confirmPassword);
+    // Clear password error when user types
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordError('');
+    }
+  };
+
+  const validatePassword = () => {
+    if (editingUser) {
+      // For editing: if password is provided, confirm password must match
+      if (formData.password && formData.password !== formData.confirmPassword) {
+        setPasswordError('Passwords do not match');
+        return false;
+      }
+      // If password is blank, that's fine (user doesn't want to change it)
+      if (formData.password && formData.password.length < 6) {
+        setPasswordError('Password must be at least 6 characters');
+        return false;
+      }
+    } else {
+      // For new users: password is required and must match
+      if (!formData.password) {
+        setPasswordError('Password is required');
+        return false;
+      }
+      if (formData.password.length < 6) {
+        setPasswordError('Password must be at least 6 characters');
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setPasswordError('Passwords do not match');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    // For new users, password is required
-    if (!editingUser && !formData.password) {
-      setPasswordError('Password is required');
+    if (!validatePassword()) {
       return;
     }
-    
-    // For existing users, only validate if password is being changed
-    if (editingUser && formData.password && !passwordsValid) {
-      return;
-    }
-    
-    // For new users, passwords must match
-    if (!editingUser && !passwordsValid) {
-      return;
-    }
-    
+
     try {
       const url = editingUser 
         ? `${API_BASE_URL}/users/${editingUser.id}`
@@ -120,339 +198,897 @@ function UserManagement() {
       
       const method = editingUser ? 'PUT' : 'POST';
       
-      const payload = {
+      // Prepare the data to send
+      const dataToSend = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
-        branch_id: formData.branch_id ? Number(formData.branch_id) : undefined,
+        branch_id: formData.branch_id || null,
       };
-      if (!editingUser || (formData.password && formData.password.trim() !== '')) {
-        payload.password = formData.password;
+      
+      // Only include password if it's provided (for new users or when updating)
+      if (formData.password) {
+        dataToSend.password = formData.password;
       }
 
       const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dataToSend),
       });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
-      }
 
-      // Attempt to parse JSON, but tolerate empty body (204)
-      let data = null;
-      const respText = await response.text();
-      if (respText) {
-        try { data = JSON.parse(respText); } catch (_) { /* ignore parse error */ }
+      if (response.ok) {
+        setSnackbar({
+          open: true,
+          message: editingUser ? 'User updated successfully!' : 'User created successfully!',
+          severity: 'success',
+        });
+        handleCloseDialog();
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        setSnackbar({
+          open: true,
+          message: errorData.message || 'Operation failed',
+          severity: 'error',
+        });
       }
-
-      await fetchUsers(); // Refresh the list
-      resetForm();
-      alert(editingUser ? 'User updated successfully!' : 'User created successfully!');
-    } catch (err) {
-      setError('Error saving user: ' + err.message);
+    } catch (error) {
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: 'An error occurred',
+        severity: 'error',
+      });
     }
   };
 
-  // Delete user
-  const deleteUser = async (userId) => {
+  const handleDelete = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Accept': 'application/json',
-          }
-        });
-        
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`HTTP ${response.status} ${response.statusText} - ${text.substring(0, 120)}`);
-        }
+              const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
 
-        await fetchUsers(); // Refresh the list
-        alert('User deleted successfully!');
-      } catch (err) {
-        setError('Error deleting user: ' + err.message);
+        if (response.ok) {
+          setSnackbar({
+            open: true,
+            message: 'User deleted successfully!',
+            severity: 'success',
+          });
+          fetchUsers();
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'Failed to delete user',
+            severity: 'error',
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setSnackbar({
+          open: true,
+          message: 'An error occurred',
+          severity: 'error',
+        });
       }
     }
   };
 
-  // Reset form
-  const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', confirmPassword: '', role: '', branch_id: '' });
-    setEditingUser(null);
-    setShowForm(false);
-    setPasswordError('');
-  };
-
-  // Edit user
-  const editUser = (user) => {
+  const handleEdit = (user) => {
+    setEditingUser(user);
     setFormData({
       name: user.name,
       email: user.email,
-      password: '', // Don't pre-fill password
-      confirmPassword: '', // Don't pre-fill confirm password
-      role: user.role || '',
-      branch_id: user.branch_id != null ? String(user.branch_id) : ''
+      password: '',
+      confirmPassword: '',
+      role: user.role,
+      branch_id: user.branch_id || '',
     });
-    setEditingUser(user);
-    setShowForm(true);
     setPasswordError('');
+    setOpenDialog(true);
   };
 
-  // Load users on component mount
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditingUser(null);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: '',
+      branch_id: '',
+    });
+    setPasswordError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const handleBranchAssignment = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/branches/assign-manager`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(branchAssignment),
+      });
+
+      if (response.ok) {
+        setSnackbar({
+          open: true,
+          message: 'Branch assignment updated successfully!',
+          severity: 'success',
+        });
+        setOpenBranchDialog(false);
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        setSnackbar({
+          open: true,
+          message: errorData.message || 'Assignment failed',
+          severity: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: 'An error occurred',
+        severity: 'error',
+      });
+    }
+  };
+
+  const getRoleColor = (role) => {
+    const colors = {
+      'super_admin': '#d32f2f',
+      'owner': '#1976d2',
+      'admin': '#388e3c',
+      'branch_manager': '#f57c00',
+      'cashier': '#7b1fa2',
+      'barista': '#0097a7',
+      'staff': '#666',
+    };
+    return colors[role] || '#666';
+  };
+
+  const getAvailableRoles = () => {
+    return [
+      { value: 'super_admin', label: 'Super Admin' },
+      { value: 'owner', label: 'Owner' },
+      { value: 'admin', label: 'Admin' },
+      { value: 'branch_manager', label: 'Branch Manager' },
+      { value: 'cashier', label: 'Cashier' },
+      { value: 'barista', label: 'Barista' },
+      { value: 'staff', label: 'Staff' },
+    ];
+  };
+
+  const getRoleDisplayName = (role) => {
+    const roleMap = {
+      'super_admin': 'Super Admin',
+      'owner': 'Owner',
+      'admin': 'Admin',
+      'branch_manager': 'Branch Manager',
+      'cashier': 'Cashier',
+      'barista': 'Barista',
+      'staff': 'Staff',
+    };
+    return roleMap[role] || role;
+  };
+
+
 
   if (loading) {
     return (
-      <div style={{ padding: '20px' }}>
-        <h1>User Management</h1>
-        <p>Loading users...</p>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>User Management</h1>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Header />
       
-      {error && (
-        <div style={{ 
-          background: '#ffebee', 
-          color: '#c62828', 
-          padding: '10px', 
-          margin: '10px 0',
-          border: '1px solid #ef5350',
-          borderRadius: '4px'
-        }}>
-          Error: {error}
-        </div>
-      )}
+      <Box sx={{ p: 3 }}>
+        {/* Welcome Section */}
+        <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(139, 69, 19, 0.05)', borderRadius: 3, border: '1px solid rgba(139, 69, 19, 0.1)' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 2 }}>
+            Welcome back, {admin?.name}! 👋
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            You are currently logged in as a <strong>{admin?.role}</strong> with full access to manage users and system settings.
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip
+              label={admin?.email}
+              variant="outlined"
+              size="small"
+              sx={{ borderColor: 'primary.main', color: 'primary.main' }}
+            />
+            <Chip
+              label={`Role: ${admin?.role}`}
+              size="small"
+              sx={{
+                bgcolor: admin?.role === 'Super Admin' ? '#d32f2f' : '#1976d2',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+            />
+          </Box>
+        </Box>
 
-      <div style={{ marginBottom: '20px' }}>
-        <button 
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            background: '#1976d2',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          {showForm ? 'Cancel' : 'Add New User'}
-        </button>
-      </div>
+        {/* Page Header */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            User Management
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenDialog(true)}
+            sx={{
+              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+              },
+            }}
+          >
+            Add User
+          </Button>
+        </Box>
 
-      {showForm && (
-        <div style={{ 
-          border: '1px solid #ddd', 
-          padding: '20px', 
-          marginBottom: '20px',
-          borderRadius: '4px',
-          background: '#f9f9f9'
-        }}>
-          <h3>{editingUser ? 'Edit User' : 'Add New User'}</h3>
-          <div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Name:</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>
-                Password {editingUser && '(leave blank to keep current)'}:
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => handlePasswordChange('password', e.target.value)}
-                required={!editingUser}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: passwordError && formData.password ? '1px solid #f44336' : '1px solid #ddd', 
-                  borderRadius: '4px' 
-                }}
-              />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>
-                Confirm Password {editingUser && '(leave blank to keep current)'}:
-              </label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                required={!editingUser || formData.password !== ''}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: passwordError && formData.confirmPassword ? '1px solid #f44336' : '1px solid #ddd', 
-                  borderRadius: '4px' 
-                }}
-              />
-              {passwordError && (
-                <div style={{ 
-                  color: '#f44336', 
-                  fontSize: '14px', 
-                  marginTop: '5px' 
-                }}>
-                  {passwordError}
-                </div>
-              )}
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Role:</label>
-              <input
-                type="text"
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                required
-                placeholder="Owner / Branch Manager / Cashier / Barista / Staff"
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Branch ID:</label>
-              <input
-                type="number"
-                value={formData.branch_id}
-                onChange={(e) => setFormData({...formData, branch_id: e.target.value})}
-                required
-                min="1"
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-              />
-            </div>
-            <div>
-              <button 
-                type="button"
-                onClick={saveUser}
-                disabled={passwordError !== ''}
-                style={{
-                  background: passwordError ? '#ccc' : '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '4px',
-                  cursor: passwordError ? 'not-allowed' : 'pointer',
-                  marginRight: '10px'
+
+
+      {/* Users Grid */}
+      <Grid container spacing={3}>
+        {Array.isArray(users) && users.length > 0 ? (
+          users.map((user) => (
+            <Grid item xs={12} sm={6} md={4} key={user.id || user.user_id}>
+              <Card 
+                elevation={2}
+                sx={{ 
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                  }
                 }}
               >
-                {editingUser ? 'Update User' : 'Create User'}
-              </button>
-              <button 
-                type="button"
-                onClick={resetForm}
-                style={{
-                  background: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar 
+                      sx={{ 
+                        bgcolor: getRoleColor(user.role),
+                        mr: 2,
+                        width: 48,
+                        height: 48
+                      }}
+                    >
+                      <PersonIcon />
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        {user.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user.email}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-      <div>
-        <h3>Users List ({users.length} users)</h3>
-        {users.length === 0 ? (
-          <p>No users found.</p>
+                  <Box sx={{ mb: 2 }}>
+                    <Chip
+                      label={getRoleDisplayName(user.role)}
+                      size="small"
+                      sx={{
+                        bgcolor: getRoleColor(user.role),
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                    {user.branch && (
+                      <Chip
+                        label={user.branch.name}
+                        size="small"
+                        variant="outlined"
+                        sx={{ ml: 1 }}
+                      />
+                    )}
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(user)}
+                      sx={{ color: 'primary.main' }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(user.id || user.user_id)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))
         ) : (
-          <table style={{ 
-            width: '100%', 
-            borderCollapse: 'collapse',
-            border: '1px solid #ddd'
-          }}>
-            <thead>
-              <tr style={{ background: '#f5f5f5' }}>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Email</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Role</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Branch</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Created</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.id}>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.id}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.name}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.email}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.role || '-'}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{user.branch_id != null ? user.branch_id : '-'}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
-                  </td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <button 
-                      onClick={() => editUser(user)}
-                      style={{
-                        background: '#ff9800',
-                        color: 'white',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginRight: '5px'
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => deleteUser(user.id)}
-                      style={{
-                        background: '#f44336',
-                        color: 'white',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Grid item xs={12}>
+            <Card sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                {loading ? 'Loading users...' : 'No users found'}
+              </Typography>
+              {!loading && (
+                <Typography variant="body2" color="text.secondary">
+                  Start by adding your first user using the "Add User" button above.
+                </Typography>
+              )}
+            </Card>
+          </Grid>
         )}
-      </div>
-    </div>
-  );
+      </Grid>
+
+      {/* Add/Edit User Dialog */}
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="lg" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+            minHeight: '80vh',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 2, 
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          bgcolor: 'background.paper'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+              {editingUser ? <EditIcon /> : <AddIcon />}
+            </Avatar>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                {editingUser ? 'Edit User' : 'Add New User'}
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                {editingUser ? 'Update user information and permissions' : 'Create a new user account'}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 4, pb: 2 }}>
+          <Box component="form" onSubmit={handleSubmit}>
+            <Grid container spacing={4}>
+              {/* Personal Information Section */}
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <PersonIcon fontSize="large" />
+                    Personal Information
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Full Name *"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        size="large"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Email Address *"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        size="large"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+
+              {/* Security & Access Section */}
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <SecurityIcon fontSize="large" />
+                    Security & Access
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label={editingUser ? "New Password (leave blank to keep current)" : "Password *"}
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required={!editingUser}
+                        variant="outlined"
+                        size="large"
+                        helperText={editingUser ? 'Leave blank to keep current password' : 'Minimum 6 characters'}
+                        error={!!passwordError}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                                sx={{ color: 'primary.main' }}
+                              >
+                                {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                          '& .MuiFormHelperText-root': {
+                            fontSize: '1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label={editingUser ? "Confirm New Password" : "Confirm Password *"}
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        required={!editingUser}
+                        error={!!passwordError}
+                        helperText={passwordError || (editingUser ? 'Re-enter the new password' : 'Re-enter the password')}
+                        variant="outlined"
+                        size="large"
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                edge="end"
+                                sx={{ color: 'primary.main' }}
+                              >
+                                {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                          '& .MuiFormHelperText-root': {
+                            fontSize: '1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+
+              {/* Roles & Assignment Section */}
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <AssignmentIcon fontSize="large" />
+                    Roles & Assignment
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>User Role *</InputLabel>
+                        <Select
+                          name="role"
+                          value={formData.role}
+                          onChange={handleInputChange}
+                          required
+                          label="User Role *"
+                          sx={{
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '& .MuiOutlinedInput-root': {
+                              '&:hover fieldset': {
+                                borderColor: 'primary.main',
+                                borderWidth: 2,
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: 'primary.main',
+                                borderWidth: 3,
+                              },
+                            },
+                          }}
+                        >
+                          {getAvailableRoles().map((role) => (
+                            <MenuItem key={role.value} value={role.value}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box
+                                  sx={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    bgcolor: getRoleColor(role.value),
+                                  }}
+                                />
+                                <Typography sx={{ fontSize: '1.1rem' }}>
+                                  {role.label}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>Branch Assignment</InputLabel>
+                        <Select
+                          name="branch_id"
+                          value={formData.branch_id}
+                          onChange={handleInputChange}
+                          label="Branch Assignment"
+                          sx={{
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '& .MuiOutlinedInput-root': {
+                              '&:hover fieldset': {
+                                borderColor: 'primary.main',
+                                borderWidth: 2,
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: 'primary.main',
+                                borderWidth: 3,
+                              },
+                            },
+                          }}
+                        >
+                          <MenuItem value="">
+                            <em>No Branch Assigned</em>
+                          </MenuItem>
+                          {branches.map((branch) => (
+                            <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <BusinessIcon fontSize="medium" sx={{ color: 'primary.main' }} />
+                                <Typography sx={{ fontSize: '1.1rem' }}>
+                                  {branch.name || branch.branch_name}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        
+        <DialogActions sx={{ 
+          p: 4, 
+          pt: 3, 
+          borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+          bgcolor: 'background.paper'
+        }}>
+          <Button 
+            onClick={handleCloseDialog}
+            variant="outlined"
+            size="large"
+            sx={{ 
+              borderColor: 'text.secondary',
+              color: 'text.secondary',
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              '&:hover': {
+                borderColor: 'text.primary',
+                color: 'text.primary',
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!formData.name || !formData.email || !formData.role}
+            size="large"
+            sx={{
+              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
+              px: 5,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 6px 20px rgba(139, 69, 19, 0.4)',
+              },
+              '&:disabled': {
+                background: '#ccc',
+                transform: 'none',
+                boxShadow: 'none',
+              },
+              transition: 'all 0.3s ease',
+            }}
+          >
+            {editingUser ? 'Update User' : 'Create User'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Branch Assignment Dialog */}
+      <Dialog open={openBranchDialog} onClose={() => setOpenBranchDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ 
+          pb: 2, 
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          bgcolor: 'background.paper'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
+              <AssignmentIcon />
+            </Avatar>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+              Assign User to Branch
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <FormControl fullWidth variant="outlined" size="large">
+                  <InputLabel sx={{ fontSize: '1.1rem' }}>Branch</InputLabel>
+                  <Select
+                    value={branchAssignment.branch_id}
+                    onChange={(e) => setBranchAssignment(prev => ({ ...prev, branch_id: e.target.value }))}
+                    label="Branch"
+                    sx={{
+                      fontSize: '1.1rem',
+                      padding: '16px 14px',
+                    }}
+                  >
+                    {Array.isArray(branches) && branches.map((branch) => (
+                      <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <BusinessIcon fontSize="medium" sx={{ color: 'primary.main' }} />
+                          <Typography sx={{ fontSize: '1.1rem' }}>
+                            {branch.name || branch.branch_name}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth variant="outlined" size="large">
+                  <InputLabel sx={{ fontSize: '1.1rem' }}>Role</InputLabel>
+                  <Select
+                    value={branchAssignment.role}
+                    onChange={(e) => setBranchAssignment(prev => ({ ...prev, role: e.target.value }))}
+                    label="Role"
+                    sx={{
+                      fontSize: '1.1rem',
+                      padding: '16px 14px',
+                    }}
+                  >
+                    {getAvailableRoles().map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box
+                            sx={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: '50%',
+                              bgcolor: getRoleColor(role.value),
+                            }}
+                          />
+                          <Typography sx={{ fontSize: '1.1rem' }}>
+                            {role.label}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button 
+            onClick={() => setOpenBranchDialog(false)}
+            variant="outlined"
+            size="large"
+            sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleBranchAssignment}
+            variant="contained"
+            size="large"
+            sx={{
+              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+              },
+            }}
+          >
+            Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+        </Box>
+      </Box>
+    );
 }
+
 
 export default UserManagement;

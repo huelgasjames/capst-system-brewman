@@ -25,7 +25,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|string',
-            'branch_id' => 'required|integer|exists:branches,branch_id',
+            'branch_id' => 'nullable|integer|exists:branches,branch_id',
         ]);
 
         $validated['password'] = bcrypt($validated['password']); // Hash password
@@ -63,13 +63,17 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . $id . ',user_id',
-            'password' => 'sometimes|min:6',
+            'password' => 'sometimes|nullable|min:6',
             'role' => 'sometimes|string',
-            'branch_id' => 'sometimes|integer|exists:branches,branch_id',
+            'branch_id' => 'sometimes|nullable|integer|exists:branches,branch_id',
         ]);
 
-        if (isset($validated['password'])) {
+        // Only update password if it's provided and not empty
+        if (isset($validated['password']) && !empty($validated['password'])) {
             $validated['password'] = bcrypt($validated['password']);
+        } else {
+            // Remove password from validation if it's empty or not provided
+            unset($validated['password']);
         }
 
         $user->update($validated);

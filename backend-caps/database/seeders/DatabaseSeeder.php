@@ -19,12 +19,17 @@ class DatabaseSeeder extends Seeder
             BranchSeeder::class,
         ]);
 
+        // Create admins
+        $this->call([
+            AdminSeeder::class,
+        ]);
+
         // Create sample users with roles and branch assignments
         User::create([
             'name' => 'John Manager',
             'email' => 'john.manager@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'Branch Manager',
+            'role' => 'branch_manager',
             'branch_id' => 1, // Main Branch
         ]);
 
@@ -32,7 +37,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Sarah Cashier',
             'email' => 'sarah.cashier@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'Cashier',
+            'role' => 'cashier',
             'branch_id' => 1, // Main Branch
         ]);
 
@@ -40,7 +45,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Mike Barista',
             'email' => 'mike.barista@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'Barista',
+            'role' => 'barista',
             'branch_id' => 1, // Main Branch
         ]);
 
@@ -48,7 +53,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Lisa Manager',
             'email' => 'lisa.manager@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'Branch Manager',
+            'role' => 'branch_manager',
             'branch_id' => 2, // Mall Branch
         ]);
 
@@ -56,8 +61,25 @@ class DatabaseSeeder extends Seeder
             'name' => 'David Cashier',
             'email' => 'david.cashier@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'Cashier',
-            'branch_id' => 2, // Mall Branch
+            'role' => 'cashier',
+            'branch_id' => 2, 
+        ]);
+
+        // Create some unassigned staff users
+        User::create([
+            'name' => 'Unassigned Staff 1',
+            'email' => 'staff1@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'staff',
+            'branch_id' => null, // Not assigned to any branch
+        ]);
+
+        User::create([
+            'name' => 'Unassigned Staff 2',
+            'email' => 'staff2@brewman.com',
+            'password' => bcrypt('password'),
+            'role' => 'staff',
+            'branch_id' => null, // Not assigned to any branch
         ]);
     }
 }
