@@ -51,8 +51,10 @@ import {
   RemoveCircle as RemoveIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
 
 function BranchManagement() {
+  const { admin, getAuthHeaders } = useAuth();
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,9 +88,7 @@ function BranchManagement() {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/branches`, {
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -113,9 +113,7 @@ function BranchManagement() {
   const fetchUsers = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -204,10 +202,7 @@ function BranchManagement() {
         // Update existing branch
         const response = await fetch(`${API_BASE_URL}/branches/${editingBranch.branch_id || editingBranch.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
 
@@ -223,10 +218,7 @@ function BranchManagement() {
         // Create new branch
         const response = await fetch(`${API_BASE_URL}/branches`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(formData),
         });
 
@@ -250,9 +242,7 @@ function BranchManagement() {
       try {
         const response = await fetch(`${API_BASE_URL}/branches/${branchId}`, {
           method: 'DELETE',
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
         });
 
         if (response.ok) {
@@ -278,10 +268,7 @@ function BranchManagement() {
     try {
       const response = await fetch(`${API_BASE_URL}/branches/assign-manager`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           branch_id: selectedBranch.branch_id || selectedBranch.id,
           user_id: userAssignment.user_id,
@@ -311,10 +298,7 @@ function BranchManagement() {
         // Try to update the user directly to remove branch assignment
         const updateResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             branch_id: null, // Remove branch assignment
             _method: 'PUT'
@@ -335,10 +319,7 @@ function BranchManagement() {
           
           const unassignResponse = await fetch(`${API_BASE_URL}/branches/unassign-user`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               user_id: userId,
               branch_id: branchId,
@@ -385,6 +366,20 @@ function BranchManagement() {
     };
     return colors[role] || '#666';
   };
+
+  // Check if user has permission to manage branches
+  if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h5" color="error" sx={{ mb: 2 }}>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You don't have permission to access Branch Management. Only Super Admin and Owner users can manage branches.
+        </Typography>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

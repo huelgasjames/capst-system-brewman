@@ -380,6 +380,20 @@ function UserManagement() {
 
 
 
+  // Check if user has permission to manage users
+  if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h5" color="error" sx={{ mb: 2 }}>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You don't have permission to access User Management. Only Super Admin and Owner users can manage users.
+        </Typography>
+      </Box>
+    );
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>

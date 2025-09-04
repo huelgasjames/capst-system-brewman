@@ -29,24 +29,20 @@ import {
 } from '@mui/icons-material';
 import bmLogo from '../BM-Logo.png';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 260;
 
 function Sidebar() {
   const location = useLocation();
+  const { admin } = useAuth();
   
-  // Mock user data for development
-  const currentUser = {
-    name: 'Developer',
-    role: 'Developer'
-  };
-
   const isActive = (path) => location.pathname === path;
 
-  // Mock permissions for development - allow all access
-  const canManageUsers = true;
-  const canManageBranches = true;
-  const canManageSystem = true;
+  // Role-based permissions
+  const canManageUsers = admin && ['Super Admin', 'Owner'].includes(admin.role);
+  const canManageBranches = admin && ['Super Admin', 'Owner'].includes(admin.role);
+  const canManageSystem = admin && ['Super Admin', 'Owner'].includes(admin.role);
 
   // Helper function to get role display name
   const getRoleDisplayName = (role) => {
@@ -83,13 +79,13 @@ function Sidebar() {
         }}>
           <img
             src={bmLogo}
-            alt="BrewManager"
+            alt="Brew Manager"
             style={{ height: 88, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}
           />
         </Box>
 
         {/* User Role Display */}
-        {currentUser && (
+        {admin && (
           <Box sx={{ 
             mb: 2, 
             p: 2, 
@@ -98,10 +94,10 @@ function Sidebar() {
             textAlign: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#8B4513', fontWeight: 'bold' }}>
-              {currentUser.name}
+              {admin.name}
             </Typography>
             <Typography variant="caption" sx={{ color: '#A0522D' }}>
-              {getRoleDisplayName(currentUser.role)}
+              {getRoleDisplayName(admin.role)}
             </Typography>
           </Box>
         )}

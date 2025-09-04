@@ -78,7 +78,7 @@ const Header = () => {
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
           >
-            BrewMan Dashboard
+            Brew Manager Comprehensive Web Based Management for Coffee Shop
           </Typography>
         </Box>
 

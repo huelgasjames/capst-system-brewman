@@ -112,7 +112,7 @@ function Login() {
             Admin Login
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Access your BrewMan Dashboard
+            Access your Brew Manager Dashboard
           </Typography>
         </Box>
 

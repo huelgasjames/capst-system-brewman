@@ -58,7 +58,7 @@ function Dashboard() {
                 Welcome back, {admin?.name}! 👋
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                You are currently logged in as a <strong>{admin?.role}</strong> with full access to the BrewMan system.
+                You are currently logged in as a <strong>{admin?.role}</strong> with full access to the Brew Manager system.
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Chip
