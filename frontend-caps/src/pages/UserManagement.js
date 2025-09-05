@@ -438,32 +438,6 @@ function UserManagement() {
       <Header />
       
       <Box sx={{ p: 3 }}>
-        {/* Welcome Section */}
-        <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(139, 69, 19, 0.05)', borderRadius: 3, border: '1px solid rgba(139, 69, 19, 0.1)' }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 2 }}>
-            Welcome back, {admin?.name}! 👋
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-            You are currently logged in as a <strong>{admin?.role}</strong> with full access to manage users and system settings.
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip
-              label={admin?.email}
-              variant="outlined"
-              size="small"
-              sx={{ borderColor: 'primary.main', color: 'primary.main' }}
-            />
-            <Chip
-              label={`Role: ${admin?.role}`}
-              size="small"
-              sx={{
-                bgcolor: admin?.role === 'Super Admin' ? '#d32f2f' : '#1976d2',
-                color: 'white',
-                fontWeight: 'bold'
-              }}
-            />
-          </Box>
-        </Box>
 
         {/* Page Header */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -490,18 +464,18 @@ function UserManagement() {
           <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 3 }}>
             User Role Overview
           </Typography>
-          <Grid container spacing={2} sx={{ minHeight: '120px' }}>
+          <Grid container spacing={3} sx={{ minHeight: '150px' }}>
             {/* Branch Manager Card */}
             <Grid item xs={12} sm={6} md={3}>
               <Card 
                 elevation={0}
                 sx={{ 
-                  height: '120px',
-                  minHeight: '120px',
-                  maxHeight: '120px',
-                  width: '120px',
-                  minWidth: '120px',
-                  maxWidth: '120px',
+                  height: '150px',
+                  minHeight: '150px',
+                  maxHeight: '150px',
+                  width: '150px',
+                  minWidth: '150px',
+                  maxWidth: '150px',
                   background: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)',
                   borderRadius: 3,
                   border: '1px solid rgba(245, 124, 0, 0.2)',
@@ -511,7 +485,7 @@ function UserManagement() {
                   mx: 'auto',
                   '&:hover': {
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 16px rgba(245, 124, 0, 0.25)',
+                    boxShadow: '0 8px 20px rgba(245, 124, 0, 0.25)',
                   },
                   '&:active': {
                     transform: 'translateY(0px)',
@@ -530,14 +504,14 @@ function UserManagement() {
                   zIndex: 1
                 }}>
                   <BranchManagerIcon sx={{ 
-                    fontSize: 28, 
-                    mb: 0.8, 
+                    fontSize: 36, 
+                    mb: 1.2, 
                     opacity: 0.95,
-                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                   }} />
                   <Typography variant="h3" sx={{ 
                     fontWeight: 'bold', 
-                    mb: 0.3,
+                    mb: 0.4,
                     fontSize: '1.8rem',
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -547,10 +521,9 @@ function UserManagement() {
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
                     textAlign: 'center',
-                    fontSize: '0.65rem',
+                    fontSize: '0.7rem',
                     fontWeight: 500,
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    lineHeight: 1
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
                     Branch Manager{roleCounts.branchManager !== 1 ? 's' : ''}
                   </Typography>
@@ -563,12 +536,12 @@ function UserManagement() {
               <Card 
                 elevation={0}
                 sx={{ 
-                  height: '120px',
-                  minHeight: '120px',
-                  maxHeight: '120px',
-                  width: '120px',
-                  minWidth: '120px',
-                  maxWidth: '120px',
+                  height: '150px',
+                  minHeight: '150px',
+                  maxHeight: '150px',
+                  width: '150px',
+                  minWidth: '150px',
+                  maxWidth: '150px',
                   background: 'linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%)',
                   borderRadius: 3,
                   border: '1px solid rgba(123, 31, 162, 0.2)',
@@ -578,7 +551,7 @@ function UserManagement() {
                   mx: 'auto',
                   '&:hover': {
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 16px rgba(123, 31, 162, 0.25)',
+                    boxShadow: '0 8px 20px rgba(123, 31, 162, 0.25)',
                   },
                   '&:active': {
                     transform: 'translateY(0px)',
@@ -597,14 +570,14 @@ function UserManagement() {
                   zIndex: 1
                 }}>
                   <CashierIcon sx={{ 
-                    fontSize: 28, 
-                    mb: 0.8, 
+                    fontSize: 36, 
+                    mb: 1.2, 
                     opacity: 0.95,
-                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                   }} />
                   <Typography variant="h3" sx={{ 
                     fontWeight: 'bold', 
-                    mb: 0.3,
+                    mb: 0.4,
                     fontSize: '1.8rem',
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -614,10 +587,9 @@ function UserManagement() {
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
                     textAlign: 'center',
-                    fontSize: '0.65rem',
+                    fontSize: '0.7rem',
                     fontWeight: 500,
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    lineHeight: 1
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
                     Cashier{roleCounts.cashier !== 1 ? 's' : ''}
                   </Typography>
@@ -630,12 +602,12 @@ function UserManagement() {
               <Card 
                 elevation={0}
                 sx={{ 
-                  height: '120px',
-                  minHeight: '120px',
-                  maxHeight: '120px',
-                  width: '120px',
-                  minWidth: '120px',
-                  maxWidth: '120px',
+                  height: '150px',
+                  minHeight: '150px',
+                  maxHeight: '150px',
+                  width: '150px',
+                  minWidth: '150px',
+                  maxWidth: '150px',
                   background: 'linear-gradient(135deg, #0097a7 0%, #00acc1 100%)',
                   borderRadius: 3,
                   border: '1px solid rgba(0, 151, 167, 0.2)',
@@ -645,7 +617,7 @@ function UserManagement() {
                   mx: 'auto',
                   '&:hover': {
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 16px rgba(0, 151, 167, 0.25)',
+                    boxShadow: '0 8px 20px rgba(0, 151, 167, 0.25)',
                   },
                   '&:active': {
                     transform: 'translateY(0px)',
@@ -664,14 +636,14 @@ function UserManagement() {
                   zIndex: 1
                 }}>
                   <BaristaIcon sx={{ 
-                    fontSize: 28, 
-                    mb: 0.8, 
+                    fontSize: 36, 
+                    mb: 1.2, 
                     opacity: 0.95,
-                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                   }} />
                   <Typography variant="h3" sx={{ 
                     fontWeight: 'bold', 
-                    mb: 0.3,
+                    mb: 0.4,
                     fontSize: '1.8rem',
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -681,10 +653,9 @@ function UserManagement() {
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
                     textAlign: 'center',
-                    fontSize: '0.65rem',
+                    fontSize: '0.7rem',
                     fontWeight: 500,
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    lineHeight: 1
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
                     Barista{roleCounts.barista !== 1 ? 's' : ''}
                   </Typography>
@@ -697,12 +668,12 @@ function UserManagement() {
               <Card 
                 elevation={0}
                 sx={{ 
-                  height: '120px',
-                  minHeight: '120px',
-                  maxHeight: '120px',
-                  width: '120px',
-                  minWidth: '120px',
-                  maxWidth: '120px',
+                  height: '150px',
+                  minHeight: '150px',
+                  maxHeight: '150px',
+                  width: '150px',
+                  minWidth: '150px',
+                  maxWidth: '150px',
                   background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)',
                   borderRadius: 3,
                   border: '1px solid rgba(156, 39, 176, 0.2)',
@@ -712,7 +683,7 @@ function UserManagement() {
                   mx: 'auto',
                   '&:hover': {
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 16px rgba(156, 39, 176, 0.25)',
+                    boxShadow: '0 8px 20px rgba(156, 39, 176, 0.25)',
                   },
                   '&:active': {
                     transform: 'translateY(0px)',
@@ -731,14 +702,14 @@ function UserManagement() {
                   zIndex: 1
                 }}>
                   <StaffIcon sx={{ 
-                    fontSize: 28, 
-                    mb: 0.8, 
+                    fontSize: 36, 
+                    mb: 1.2, 
                     opacity: 0.95,
-                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                   }} />
                   <Typography variant="h3" sx={{ 
                     fontWeight: 'bold', 
-                    mb: 0.3,
+                    mb: 0.4,
                     fontSize: '1.8rem',
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
@@ -748,10 +719,9 @@ function UserManagement() {
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
                     textAlign: 'center',
-                    fontSize: '0.65rem',
+                    fontSize: '0.7rem',
                     fontWeight: 500,
-                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    lineHeight: 1
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
                     Staff Member{roleCounts.staff !== 1 ? 's' : ''}
                   </Typography>
@@ -1046,66 +1016,124 @@ function UserManagement() {
                   
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Full Name *"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        variant="outlined"
-                        size="large"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          Full Name *
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          required
+                          variant="filled"
+                          size="large"
+                          placeholder="Enter full name"
+                          sx={{
                             fontSize: '1.1rem',
-                            padding: '16px 14px',
                             height: '56px',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                            borderRadius: 2,
+                            '& .MuiFilledInput-root': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&.Mui-focused': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&:before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:hover:not(.Mui-disabled):before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:after': {
+                                borderBottom: '2px solid #8B4513',
+                              },
                             },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 3,
-                            },
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontSize: '1.1rem',
-                          },
-                        }}
-                      />
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          Enter fullname of the user
+                        </Typography>
+                      </Box>
                     </Grid>
                     
                     <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Email Address *"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        variant="outlined"
-                        size="large"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          Email Address *
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          required
+                          variant="filled"
+                          size="large"
+                          placeholder="Enter email address"
+                          sx={{
                             fontSize: '1.1rem',
-                            padding: '16px 14px',
                             height: '56px',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                            borderRadius: 2,
+                            '& .MuiFilledInput-root': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&.Mui-focused': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&:before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:hover:not(.Mui-disabled):before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:after': {
+                                borderBottom: '2px solid #8B4513',
+                              },
                             },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 3,
-                            },
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontSize: '1.1rem',
-                          },
-                        }}
-                      />
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          Enter an email address for login
+                        </Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Box>
@@ -1137,103 +1165,153 @@ function UserManagement() {
                   
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label={editingUser ? "New Password (leave blank to keep current)" : "Password *"}
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        required={!editingUser}
-                        variant="outlined"
-                        size="large"
-                        helperText={editingUser ? 'Leave blank to keep current password' : 'Minimum 6 characters'}
-                        error={!!passwordError}
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => setShowPassword(!showPassword)}
-                                edge="end"
-                                sx={{ color: 'primary.main' }}
-                              >
-                                {showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          {editingUser ? "New Password (leave blank to keep current)" : "Password *"}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          required={!editingUser}
+                          variant="filled"
+                          size="large"
+                          placeholder={editingUser ? "Enter new password (optional)" : "Enter password (minimum 6 characters)"}
+                          error={!!passwordError}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  edge="end"
+                                  sx={{ color: 'primary.main' }}
+                                >
+                                  {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
                             fontSize: '1.1rem',
-                            padding: '16px 14px',
                             height: '56px',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                            borderRadius: 2,
+                            '& .MuiFilledInput-root': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&.Mui-focused': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&:before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:hover:not(.Mui-disabled):before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:after': {
+                                borderBottom: '2px solid #8B4513',
+                              },
                             },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 3,
-                            },
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontSize: '1.1rem',
-                          },
-                          '& .MuiFormHelperText-root': {
-                            fontSize: '1rem',
-                          },
-                        }}
-                      />
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: passwordError ? 'error.main' : 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          {passwordError || (editingUser ? 'Leave blank to keep current password' : 'Password must be at least 6 characters long')}
+                        </Typography>
+                      </Box>
                     </Grid>
                     
                     <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label={editingUser ? "Confirm New Password" : "Confirm Password *"}
-                        name="confirmPassword"
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        required={!editingUser}
-                        error={!!passwordError}
-                        helperText={passwordError || (editingUser ? 'Re-enter the new password' : 'Re-enter the password')}
-                        variant="outlined"
-                        size="large"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                edge="end"
-                                sx={{ color: 'primary.main' }}
-                              >
-                                {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          {editingUser ? "Confirm New Password" : "Confirm Password *"}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="confirmPassword"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          required={!editingUser}
+                          error={!!passwordError}
+                          variant="filled"
+                          size="large"
+                          placeholder={editingUser ? "Re-enter new password to confirm" : "Re-enter password to confirm"}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                  edge="end"
+                                  sx={{ color: 'primary.main' }}
+                                >
+                                  {showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
                             fontSize: '1.1rem',
-                            padding: '16px 14px',
                             height: '56px',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
+                            backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                            borderRadius: 2,
+                            '& .MuiFilledInput-root': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&.Mui-focused': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                              },
+                              '&:before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:hover:not(.Mui-disabled):before': {
+                                borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                              },
+                              '&:after': {
+                                borderBottom: '2px solid #8B4513',
+                              },
                             },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 3,
-                            },
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontSize: '1.1rem',
-                          },
-                          '& .MuiFormHelperText-root': {
-                            fontSize: '1rem',
-                          },
-                        }}
-                      />
+                          }}
+                        />
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: passwordError ? 'error.main' : 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          {passwordError || (editingUser ? 'Re-enter the new password to confirm' : 'Re-enter the same password to confirm')}
+                        </Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Box>
@@ -1265,90 +1343,168 @@ function UserManagement() {
                   
                   <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined" size="large">
-                        <InputLabel sx={{ fontSize: '1.1rem' }}>User Role *</InputLabel>
-                        <Select
-                          name="role"
-                          value={formData.role}
-                          onChange={handleInputChange}
-                          required
-                          label="User Role *"
-                          sx={{
-                            fontSize: '1.1rem',
-                            padding: '16px 14px',
-                            height: '56px',
-                            '& .MuiOutlinedInput-root': {
-                              '&:hover fieldset': {
-                                borderColor: 'primary.main',
-                                borderWidth: 2,
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          User Role *
+                        </Typography>
+                        <FormControl fullWidth variant="filled" size="large">
+                          <Select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleInputChange}
+                            required
+                            displayEmpty
+                            sx={{
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              '& .MuiFilledInput-root': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                                borderRadius: 2,
+                                '&:hover': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                },
+                                '&.Mui-focused': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                },
+                                '&:before': {
+                                  borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                                },
+                                '&:hover:not(.Mui-disabled):before': {
+                                  borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                                },
+                                '&:after': {
+                                  borderBottom: '2px solid #8B4513',
+                                },
                               },
-                              '&.Mui-focused fieldset': {
-                                borderColor: 'primary.main',
-                                borderWidth: 3,
-                              },
-                            },
-                          }}
-                        >
-                          {getAvailableRoles().map((role) => (
-                            <MenuItem key={role.value} value={role.value}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box
-                                  sx={{
-                                    width: 16,
-                                    height: 16,
-                                    borderRadius: '50%',
-                                    bgcolor: getRoleColor(role.value),
-                                  }}
-                                />
-                                <Typography sx={{ fontSize: '1.1rem' }}>
-                                  {role.label}
-                                </Typography>
-                              </Box>
+                            }}
+                            renderValue={(selected) => {
+                              if (!selected) {
+                                return <em style={{ color: '#999' }}>Select role</em>;
+                              }
+                              const role = getAvailableRoles().find(r => r.value === selected);
+                              return role ? role.label : selected;
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              <em>Select role</em>
                             </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                            {getAvailableRoles().map((role) => (
+                              <MenuItem key={role.value} value={role.value}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <Box
+                                    sx={{
+                                      width: 16,
+                                      height: 16,
+                                      borderRadius: '50%',
+                                      bgcolor: getRoleColor(role.value),
+                                    }}
+                                  />
+                                  <Typography sx={{ fontSize: '1.1rem' }}>
+                                    {role.label}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          Choose the user's role and permissions
+                        </Typography>
+                      </Box>
                     </Grid>
                     
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined" size="large">
-                        <InputLabel sx={{ fontSize: '1.1rem' }}>Branch Assignment</InputLabel>
-                        <Select
-                          name="branch_id"
-                          value={formData.branch_id}
-                          onChange={handleInputChange}
-                          label="Branch Assignment"
-                          sx={{
-                            fontSize: '1.1rem',
-                            padding: '16px 14px',
-                            height: '56px',
-                            '& .MuiOutlinedInput-root': {
-                              '&:hover fieldset': {
-                                borderColor: 'primary.main',
-                                borderWidth: 2,
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" sx={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: 500, 
+                          color: 'text.primary',
+                          mb: 1.5,
+                          ml: 1
+                        }}>
+                          Branch Assignment
+                        </Typography>
+                        <FormControl fullWidth variant="filled" size="large">
+                          <Select
+                            name="branch_id"
+                            value={formData.branch_id}
+                            onChange={handleInputChange}
+                            displayEmpty
+                            sx={{
+                              fontSize: '1.1rem',
+                              height: '56px',
+                              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                              borderRadius: 2,
+                              '& .MuiFilledInput-root': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                                borderRadius: 2,
+                                '&:hover': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                },
+                                '&.Mui-focused': {
+                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                },
+                                '&:before': {
+                                  borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                                },
+                                '&:hover:not(.Mui-disabled):before': {
+                                  borderBottom: '2px solid rgba(0, 0, 0, 0.23)',
+                                },
+                                '&:after': {
+                                  borderBottom: '2px solid #8B4513',
+                                },
                               },
-                              '&.Mui-focused fieldset': {
-                                borderColor: 'primary.main',
-                                borderWidth: 3,
-                              },
-                            },
-                          }}
-                        >
-                          <MenuItem value="">
-                            <em>No Branch Assigned</em>
-                          </MenuItem>
-                          {branches.map((branch) => (
-                            <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <BusinessIcon fontSize="medium" sx={{ color: 'primary.main' }} />
-                                <Typography sx={{ fontSize: '1.1rem' }}>
-                                  {branch.name || branch.branch_name}
-                                </Typography>
-                              </Box>
+                            }}
+                            renderValue={(selected) => {
+                              if (!selected) {
+                                return <em style={{ color: '#999' }}>Select branch</em>;
+                              }
+                              const branch = branches.find(b => (b.id || b.branch_id) == selected);
+                              return branch ? (branch.name || branch.branch_name) : 'Unknown Branch';
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              <em>Select branch</em>
                             </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                            <MenuItem value="">
+                              <em>No Branch Assigned</em>
+                            </MenuItem>
+                            {branches.map((branch) => (
+                              <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <BusinessIcon fontSize="medium" sx={{ color: 'primary.main' }} />
+                                  <Typography sx={{ fontSize: '1.1rem' }}>
+                                    {branch.name || branch.branch_name}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Typography variant="caption" sx={{ 
+                          fontSize: '0.9rem', 
+                          color: 'text.secondary',
+                          mt: 1,
+                          ml: 1,
+                          display: 'block'
+                        }}>
+                          Assign user to a specific branch (optional)
+                        </Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Box>

@@ -38,6 +38,7 @@ import {
   ListItemSecondaryAction,
   Switch,
   FormControlLabel,
+  Avatar,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -112,6 +113,7 @@ function InventoryManagement() {
     branch_id: admin?.branch_id || '',
     change_type: '',
     quantity: '',
+    date: new Date().toISOString().split('T')[0],
     supplier_id: '',
     notes: ''
   });
@@ -388,6 +390,7 @@ function InventoryManagement() {
       branch_id: admin?.branch_id || '',
       change_type: '',
       quantity: '',
+      date: new Date().toISOString().split('T')[0],
       supplier_id: '',
       notes: ''
     });
@@ -854,91 +857,424 @@ function InventoryManagement() {
       </Dialog>
 
       {/* Inventory Log Dialog */}
-      <Dialog open={inventoryDialog} onClose={() => setInventoryDialog(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>Add Inventory Log</DialogTitle>
-        <form onSubmit={handleInventorySubmit}>
-          <DialogContent sx={{ p: 4 }}>
-            <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="large">
-                  <InputLabel>Product</InputLabel>
-                  <Select
-                    value={inventoryForm.product_id}
-                    onChange={(e) => setInventoryForm({ ...inventoryForm, product_id: e.target.value })}
-                    required
-                  >
-                    {products.map((product) => (
-                      <MenuItem key={product.product_id} value={product.product_id}>
-                        {product.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="large">
-                  <InputLabel>Change Type</InputLabel>
-                  <Select
-                    value={inventoryForm.change_type}
-                    onChange={(e) => setInventoryForm({ ...inventoryForm, change_type: e.target.value })}
-                    required
-                  >
-                    <MenuItem value="restock">Restock</MenuItem>
-                    <MenuItem value="waste">Waste</MenuItem>
-                    <MenuItem value="sale">Sale</MenuItem>
-                    <MenuItem value="adjustment">Adjustment</MenuItem>
-                    <MenuItem value="return">Return</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Quantity"
-                  type="number"
-                  size="large"
-                  value={inventoryForm.quantity}
-                  onChange={(e) => setInventoryForm({ ...inventoryForm, quantity: e.target.value })}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="large">
-                  <InputLabel>Branch</InputLabel>
-                  <Select
-                    value={inventoryForm.branch_id}
-                    onChange={(e) => setInventoryForm({ ...inventoryForm, branch_id: e.target.value })}
-                    required
-                  >
-                    {branches.map((branch) => (
-                      <MenuItem key={branch.branch_id} value={branch.branch_id}>
-                        {branch.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+      <Dialog 
+        open={inventoryDialog} 
+        onClose={() => setInventoryDialog(false)} 
+        maxWidth="lg" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+            minHeight: '80vh',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 2, 
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          bgcolor: 'background.paper'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+              <InventoryIcon />
+            </Avatar>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                Add Inventory Log
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                Record inventory changes and track stock movements
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 4, pb: 2 }}>
+          <Box component="form" onSubmit={handleInventorySubmit}>
+            <Grid container spacing={4}>
+              {/* Product Selection Section */}
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  multiline
-                  rows={4}
-                  size="large"
-                  value={inventoryForm.notes}
-                  onChange={(e) => setInventoryForm({ ...inventoryForm, notes: e.target.value })}
-                  sx={{ mt: 1 }}
-                />
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <ProductIcon fontSize="large" />
+                    Product Selection
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={8}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>Product *</InputLabel>
+                        <Select
+                          value={inventoryForm.product_id}
+                          onChange={(e) => setInventoryForm({ ...inventoryForm, product_id: e.target.value })}
+                          required
+                          sx={{
+                            fontSize: '1.1rem',
+                            height: '56px',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          }}
+                        >
+                          {products.map((product) => (
+                            <MenuItem key={product.product_id} value={product.product_id} sx={{ fontSize: '1.1rem' }}>
+                              {product.name} - {product.category}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: 'rgba(139, 69, 19, 0.1)', 
+                        borderRadius: 1,
+                        border: '1px solid rgba(139, 69, 19, 0.2)'
+                      }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Current Stock
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          {inventoryForm.product_id ? 
+                            (products.find(p => p.product_id === inventoryForm.product_id)?.current_stock || 'N/A') : 
+                            'Select Product'
+                          }
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+
+              {/* Inventory Change Section */}
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <TrendingUpIcon fontSize="large" />
+                    Inventory Change
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>Change Type *</InputLabel>
+                        <Select
+                          value={inventoryForm.change_type}
+                          onChange={(e) => setInventoryForm({ ...inventoryForm, change_type: e.target.value })}
+                          required
+                          sx={{
+                            fontSize: '1.1rem',
+                            height: '56px',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          }}
+                        >
+                          <MenuItem value="restock" sx={{ fontSize: '1.1rem' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <CheckCircleIcon color="success" />
+                              Restock
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="sale" sx={{ fontSize: '1.1rem' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <TrendingUpIcon color="info" />
+                              Sale
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="waste" sx={{ fontSize: '1.1rem' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <WarningIcon color="error" />
+                              Waste
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="adjustment" sx={{ fontSize: '1.1rem' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <EditIcon color="warning" />
+                              Adjustment
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="return" sx={{ fontSize: '1.1rem' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <CheckCircleIcon color="success" />
+                              Return
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="Quantity *"
+                        type="number"
+                        value={inventoryForm.quantity}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, quantity: e.target.value })}
+                        required
+                        variant="outlined"
+                        size="large"
+                        helperText="Enter positive number for restock/return, negative for sale/waste"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                          '& .MuiFormHelperText-root': {
+                            fontSize: '1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="Date"
+                        type="date"
+                        value={inventoryForm.date || new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, date: e.target.value })}
+                        variant="outlined"
+                        size="large"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            padding: '16px 14px',
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+
+              {/* Additional Information Section */}
+              <Grid item xs={12}>
+                <Box sx={{ 
+                  mb: 4, 
+                  p: 3, 
+                  bgcolor: 'rgba(139, 69, 19, 0.05)', 
+                  borderRadius: 2,
+                  border: '1px solid rgba(139, 69, 19, 0.1)'
+                }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 600, 
+                    color: 'primary.main', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '3px solid',
+                    borderColor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <CategoryIcon fontSize="large" />
+                    Additional Information
+                  </Typography>
+                  
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>Branch *</InputLabel>
+                        <Select
+                          value={inventoryForm.branch_id}
+                          onChange={(e) => setInventoryForm({ ...inventoryForm, branch_id: e.target.value })}
+                          required
+                          sx={{
+                            fontSize: '1.1rem',
+                            height: '56px',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          }}
+                        >
+                          {branches.map((branch) => (
+                            <MenuItem key={branch.branch_id} value={branch.branch_id} sx={{ fontSize: '1.1rem' }}>
+                              {branch.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth variant="outlined" size="large">
+                        <InputLabel sx={{ fontSize: '1.1rem' }}>Supplier (Optional)</InputLabel>
+                        <Select
+                          value={inventoryForm.supplier_id || ''}
+                          onChange={(e) => setInventoryForm({ ...inventoryForm, supplier_id: e.target.value })}
+                          sx={{
+                            fontSize: '1.1rem',
+                            height: '56px',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          }}
+                        >
+                          <MenuItem value="" sx={{ fontSize: '1.1rem' }}>
+                            <em>No Supplier</em>
+                          </MenuItem>
+                          {/* Add suppliers here when available */}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Notes"
+                        multiline
+                        rows={4}
+                        value={inventoryForm.notes}
+                        onChange={(e) => setInventoryForm({ ...inventoryForm, notes: e.target.value })}
+                        variant="outlined"
+                        size="large"
+                        placeholder="Add any additional notes about this inventory change..."
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontSize: '1.1rem',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 2,
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: 'primary.main',
+                              borderWidth: 3,
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontSize: '1.1rem',
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
               </Grid>
             </Grid>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, pt: 2 }}>
-            <Button onClick={() => setInventoryDialog(false)} size="large">Cancel</Button>
-            <Button type="submit" variant="contained" disabled={loading} size="large">
-              {loading ? <CircularProgress size={24} /> : 'Save'}
-            </Button>
-          </DialogActions>
-        </form>
+          </Box>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 4, pt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.1)' }}>
+          <Button 
+            onClick={() => setInventoryDialog(false)} 
+            size="large"
+            sx={{ 
+              fontSize: '1.1rem',
+              px: 4,
+              py: 1.5,
+              borderColor: 'primary.main',
+              color: 'primary.main',
+              '&:hover': {
+                borderColor: 'primary.dark',
+                backgroundColor: 'rgba(139, 69, 19, 0.05)',
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            disabled={loading} 
+            size="large"
+            onClick={handleInventorySubmit}
+            sx={{ 
+              fontSize: '1.1rem',
+              px: 4,
+              py: 1.5,
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+              '&:disabled': {
+                backgroundColor: 'rgba(139, 69, 19, 0.3)',
+              }
+            }}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Save Inventory Log'}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Snackbars */}
