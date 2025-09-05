@@ -83,7 +83,8 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $admin = Auth::guard('admin')->user();
+        // Get admin from request (set by middleware)
+        $admin = $request->get('admin');
         
         if ($admin) {
             // Clear the remember token
@@ -101,7 +102,8 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
-        $admin = Auth::guard('admin')->user();
+        // Get admin from request (set by middleware)
+        $admin = $request->get('admin');
         
         if (!$admin) {
             return response()->json([
@@ -124,7 +126,8 @@ class AuthController extends Controller
      */
     public function checkAuth(Request $request)
     {
-        $admin = Auth::guard('admin')->user();
+        // Get admin from request (set by middleware)
+        $admin = $request->get('admin');
         
         if (!$admin) {
             return response()->json([

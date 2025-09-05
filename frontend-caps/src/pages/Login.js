@@ -244,44 +244,6 @@ function Login() {
               )}
             </Button>
           </Box>
-
-          {/* Demo Credentials */}
-          <Paper
-            elevation={0}
-            sx={{
-              mt: 4,
-              p: 3,
-              bgcolor: 'rgba(139, 69, 19, 0.05)',
-              border: '1px solid rgba(139, 69, 19, 0.1)',
-              borderRadius: 2,
-            }}
-          >
-            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>
-              Demo Credentials
-            </Typography>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Super Admin:
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                Email: superadmin@brewman.com
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                Password: (check your database)
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Owner:
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                Email: owner@brewman.com
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                Password: (check your database)
-              </Typography>
-            </Box>
-          </Paper>
         </CardContent>
       </Card>
     </Box>

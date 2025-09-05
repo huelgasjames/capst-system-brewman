@@ -12,7 +12,18 @@ class ProductVariant extends Model
     protected $table = 'product_variants';
     protected $primaryKey = 'variant_id';
 
-    protected $fillable = ['product_id', 'variant_name', 'price'];
+    protected $fillable = [
+        'product_id',
+        'name',
+        'price',
+        'description',
+        'is_active'
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'is_active' => 'boolean'
+    ];
 
     public function product()
     {

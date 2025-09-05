@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductVariantController;
+use App\Http\Controllers\InventoryController;
 
 // Default test route
 Route::get('/test', function () {
@@ -81,9 +84,9 @@ Route::get('/test-password', function () {
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
-Route::get('/me', [AuthController::class, 'me']);
-Route::get('/check-auth', [AuthController::class, 'checkAuth']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('admin.token');
+Route::get('/me', [AuthController::class, 'me'])->middleware('admin.token');
+Route::get('/check-auth', [AuthController::class, 'checkAuth'])->middleware('admin.token');
 
 // Protected Routes - Require Admin Authentication
 Route::middleware(['admin.token'])->group(function () {
@@ -107,4 +110,30 @@ Route::middleware(['admin.token'])->group(function () {
     Route::post('/branches/unassign-user', [BranchController::class, 'unassignUser']);         // Unassign user from branch
     Route::post('/branches/change-role', [BranchController::class, 'changeUserRole']);         // Change user role
     Route::get('/branches/available-users', [BranchController::class, 'getAvailableUsers']);   // Get available users
+
+    // Product Management CRUD
+    Route::get('/products', [ProductController::class, 'index']);           // Get all products
+    Route::post('/products', [ProductController::class, 'store']);          // Create new product
+    Route::get('/products/{id}', [ProductController::class, 'show']);       // Get product by ID
+    Route::put('/products/{id}', [ProductController::class, 'update']);     // Update product
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']); // Delete product
+    Route::get('/products/categories', [ProductController::class, 'getCategories']); // Get product categories
+    Route::get('/products/{id}/stock', [ProductController::class, 'getStock']); // Get product stock
+
+    // Product Variant Management CRUD
+    Route::get('/product-variants', [ProductVariantController::class, 'index']);           // Get all product variants
+    Route::post('/product-variants', [ProductVariantController::class, 'store']);          // Create new product variant
+    Route::get('/product-variants/{id}', [ProductVariantController::class, 'show']);       // Get product variant by ID
+    Route::put('/product-variants/{id}', [ProductVariantController::class, 'update']);     // Update product variant
+    Route::delete('/product-variants/{id}', [ProductVariantController::class, 'destroy']); // Delete product variant
+    Route::get('/products/{productId}/variants', [ProductVariantController::class, 'getByProduct']); // Get variants by product
+
+    // Inventory Management
+    Route::get('/inventory/logs', [InventoryController::class, 'index']);           // Get inventory logs
+    Route::post('/inventory/logs', [InventoryController::class, 'store']);          // Create inventory log
+    Route::get('/inventory/logs/{id}', [InventoryController::class, 'show']);       // Get inventory log by ID
+    Route::get('/inventory/status', [InventoryController::class, 'getInventoryStatus']); // Get inventory status
+    Route::get('/inventory/summary', [InventoryController::class, 'getInventorySummary']); // Get inventory summary
+    Route::get('/inventory/change-types', [InventoryController::class, 'getChangeTypes']); // Get change types
 });
+

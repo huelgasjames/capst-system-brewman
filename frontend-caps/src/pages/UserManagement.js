@@ -206,6 +206,8 @@ function UserManagement() {
         branch_id: formData.branch_id || null,
       };
       
+      console.log('Submitting user data:', dataToSend);
+      
       // Only include password if it's provided (for new users or when updating)
       if (formData.password) {
         dataToSend.password = formData.password;
@@ -227,6 +229,7 @@ function UserManagement() {
         fetchUsers();
       } else {
         const errorData = await response.json();
+        console.error('User creation/update failed:', errorData);
         setSnackbar({
           open: true,
           message: errorData.message || 'Operation failed',
@@ -342,31 +345,26 @@ function UserManagement() {
 
   const getRoleColor = (role) => {
     const colors = {
-      'super_admin': '#d32f2f',
-      'owner': '#1976d2',
-      'admin': '#388e3c',
-      'branch_manager': '#f57c00',
-      'cashier': '#7b1fa2',
-      'barista': '#0097a7',
-      'staff': '#666',
+      'Branch Manager': '#f57c00',
+      'Cashier': '#7b1fa2',
+      'Barista': '#0097a7',
+      'Staff': '#9c27b0',
     };
     return colors[role] || '#666';
   };
 
   const getAvailableRoles = () => {
     return [
-      { value: 'super_admin', label: 'Super Admin' },
-      { value: 'owner', label: 'Owner' },
-      { value: 'admin', label: 'Admin' },
-      { value: 'branch_manager', label: 'Branch Manager' },
-      { value: 'cashier', label: 'Cashier' },
-      { value: 'barista', label: 'Barista' },
-      { value: 'staff', label: 'Staff' },
+      { value: 'Branch Manager', label: 'Branch Manager' },
+      { value: 'Cashier', label: 'Cashier' },
+      { value: 'Barista', label: 'Barista' },
+      { value: 'Staff', label: 'Staff' },
     ];
   };
 
   const getRoleDisplayName = (role) => {
     const roleMap = {
+      // Backward compatibility for old format
       'super_admin': 'Super Admin',
       'owner': 'Owner',
       'admin': 'Admin',
@@ -374,12 +372,15 @@ function UserManagement() {
       'cashier': 'Cashier',
       'barista': 'Barista',
       'staff': 'Staff',
+      // Current format
+      'Branch Manager': 'Branch Manager',
+      'Cashier': 'Cashier',
+      'Barista': 'Barista',
+      'Staff': 'Staff',
     };
     return roleMap[role] || role;
   };
-
-
-
+  
   // Check if user has permission to manage users
   if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
     return (

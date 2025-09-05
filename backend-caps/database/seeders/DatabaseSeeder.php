@@ -24,12 +24,13 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
         ]);
 
+
         // Create sample users with roles and branch assignments
         User::create([
             'name' => 'John Manager',
             'email' => 'john.manager@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'branch_manager',
+            'role' => 'Branch Manager',
             'branch_id' => 1, // Main Branch
         ]);
 
@@ -53,7 +54,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Lisa Manager',
             'email' => 'lisa.manager@brewman.com',
             'password' => bcrypt('password'),
-            'role' => 'branch_manager',
+            'role' => 'Branch Manager',
             'branch_id' => 2, // Mall Branch
         ]);
 

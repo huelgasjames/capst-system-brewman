@@ -34,9 +34,9 @@ class AdminTokenMiddleware
         }
 
         // Check if admin has valid role
-        if (!in_array($admin->role, ['Super Admin', 'Owner'])) {
+        if (!in_array($admin->role, ['Super Admin', 'Owner', 'Admin', 'Manager'])) {
             return response()->json([
-                'message' => 'Access denied. Only Super Admin and Owner users can access this system.',
+                'message' => 'Access denied. Insufficient permissions.',
             ], 403);
         }
 
