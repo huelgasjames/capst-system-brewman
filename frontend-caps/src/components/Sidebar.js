@@ -202,7 +202,7 @@ function Sidebar() {
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <POSIcon fontSize="small" sx={{ color: '#8B4513' }} />
-              <Typography sx={{ color: '#8B4513', fontWeight: 'bold' }}>Operations</Typography>
+              <Typography sx={{ color: '#8B4513', fontWeight: 'bold' }}>Inventory Management</Typography>
             </Box>
           </AccordionSummary>
           <AccordionDetails>
@@ -210,8 +210,8 @@ function Sidebar() {
               <ListItemButton sx={{ pl: 4 }} component={Link} to="/pos">
                 <ListItemText primary="Point of Sale" />
               </ListItemButton>
-              <ListItemButton sx={{ pl: 4 }} component={Link} to="/kitchen-display">
-                <ListItemText primary="Kitchen Display" />
+              <ListItemButton sx={{ pl: 4 }} component={Link} to="/top-saled-items">
+                <ListItemText primary="Top Saled Items" />
               </ListItemButton>
               <ListItemButton sx={{ pl: 4 }} component={Link} to="/inventory">
                 <ListItemText primary="Inventory Management" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -51,6 +51,10 @@ import {
   Assignment as AssignmentIcon,
   RemoveCircle as RemoveIcon,
   Refresh as RefreshIcon,
+  SupervisorAccount as BranchManagerIcon,
+  PointOfSale as CashierIcon,
+  LocalCafe as BaristaIcon,
+  Groups as StaffIcon,
 } from '@mui/icons-material';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -380,6 +384,32 @@ function UserManagement() {
     };
     return roleMap[role] || role;
   };
+
+  // Calculate role counts with memoization for better performance
+  const roleCounts = useMemo(() => {
+    if (!Array.isArray(users)) return { branchManager: 0, cashier: 0, barista: 0, staff: 0 };
+    
+    return users.reduce((counts, user) => {
+      const role = getRoleDisplayName(user.role);
+      switch (role) {
+        case 'Branch Manager':
+          counts.branchManager++;
+          break;
+        case 'Cashier':
+          counts.cashier++;
+          break;
+        case 'Barista':
+          counts.barista++;
+          break;
+        case 'Staff':
+          counts.staff++;
+          break;
+        default:
+          break;
+      }
+      return counts;
+    }, { branchManager: 0, cashier: 0, barista: 0, staff: 0 });
+  }, [users]);
   
   // Check if user has permission to manage users
   if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
@@ -455,54 +485,402 @@ function UserManagement() {
           </Button>
         </Box>
 
+        {/* Role Count Cards - Fixed and Stable */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 3 }}>
+            User Role Overview
+          </Typography>
+          <Grid container spacing={2} sx={{ minHeight: '120px' }}>
+            {/* Branch Manager Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card 
+                elevation={0}
+                sx={{ 
+                  height: '120px',
+                  minHeight: '120px',
+                  maxHeight: '120px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px',
+                  background: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)',
+                  borderRadius: 3,
+                  border: '1px solid rgba(245, 124, 0, 0.2)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  mx: 'auto',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(245, 124, 0, 0.25)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)',
+                  }
+                }}
+              >
+                <CardContent sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  p: 1.5,
+                  color: 'white',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <BranchManagerIcon sx={{ 
+                    fontSize: 28, 
+                    mb: 0.8, 
+                    opacity: 0.95,
+                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                  }} />
+                  <Typography variant="h3" sx={{ 
+                    fontWeight: 'bold', 
+                    mb: 0.3,
+                    fontSize: '1.8rem',
+                    lineHeight: 1,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>
+                    {roleCounts.branchManager}
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    opacity: 0.95, 
+                    textAlign: 'center',
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    lineHeight: 1
+                  }}>
+                    Branch Manager{roleCounts.branchManager !== 1 ? 's' : ''}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
+            {/* Cashier Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card 
+                elevation={0}
+                sx={{ 
+                  height: '120px',
+                  minHeight: '120px',
+                  maxHeight: '120px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px',
+                  background: 'linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%)',
+                  borderRadius: 3,
+                  border: '1px solid rgba(123, 31, 162, 0.2)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  mx: 'auto',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(123, 31, 162, 0.25)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)',
+                  }
+                }}
+              >
+                <CardContent sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  p: 1.5,
+                  color: 'white',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <CashierIcon sx={{ 
+                    fontSize: 28, 
+                    mb: 0.8, 
+                    opacity: 0.95,
+                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                  }} />
+                  <Typography variant="h3" sx={{ 
+                    fontWeight: 'bold', 
+                    mb: 0.3,
+                    fontSize: '1.8rem',
+                    lineHeight: 1,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>
+                    {roleCounts.cashier}
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    opacity: 0.95, 
+                    textAlign: 'center',
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    lineHeight: 1
+                  }}>
+                    Cashier{roleCounts.cashier !== 1 ? 's' : ''}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Barista Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card 
+                elevation={0}
+                sx={{ 
+                  height: '120px',
+                  minHeight: '120px',
+                  maxHeight: '120px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px',
+                  background: 'linear-gradient(135deg, #0097a7 0%, #00acc1 100%)',
+                  borderRadius: 3,
+                  border: '1px solid rgba(0, 151, 167, 0.2)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  mx: 'auto',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(0, 151, 167, 0.25)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)',
+                  }
+                }}
+              >
+                <CardContent sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  p: 1.5,
+                  color: 'white',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <BaristaIcon sx={{ 
+                    fontSize: 28, 
+                    mb: 0.8, 
+                    opacity: 0.95,
+                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                  }} />
+                  <Typography variant="h3" sx={{ 
+                    fontWeight: 'bold', 
+                    mb: 0.3,
+                    fontSize: '1.8rem',
+                    lineHeight: 1,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>
+                    {roleCounts.barista}
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    opacity: 0.95, 
+                    textAlign: 'center',
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    lineHeight: 1
+                  }}>
+                    Barista{roleCounts.barista !== 1 ? 's' : ''}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Staff Card */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card 
+                elevation={0}
+                sx={{ 
+                  height: '120px',
+                  minHeight: '120px',
+                  maxHeight: '120px',
+                  width: '120px',
+                  minWidth: '120px',
+                  maxWidth: '120px',
+                  background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)',
+                  borderRadius: 3,
+                  border: '1px solid rgba(156, 39, 176, 0.2)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  mx: 'auto',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(156, 39, 176, 0.25)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)',
+                  }
+                }}
+              >
+                <CardContent sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  p: 1.5,
+                  color: 'white',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <StaffIcon sx={{ 
+                    fontSize: 28, 
+                    mb: 0.8, 
+                    opacity: 0.95,
+                    filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
+                  }} />
+                  <Typography variant="h3" sx={{ 
+                    fontWeight: 'bold', 
+                    mb: 0.3,
+                    fontSize: '1.8rem',
+                    lineHeight: 1,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>
+                    {roleCounts.staff}
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    opacity: 0.95, 
+                    textAlign: 'center',
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                    lineHeight: 1
+                  }}>
+                    Staff Member{roleCounts.staff !== 1 ? 's' : ''}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
 
       {/* Users Grid */}
       <Grid container spacing={3}>
         {Array.isArray(users) && users.length > 0 ? (
           users.map((user) => (
-            <Grid item xs={12} sm={6} md={4} key={user.id || user.user_id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={user.id || user.user_id}>
               <Card 
-                elevation={2}
+                elevation={0}
                 sx={{ 
-                  height: '100%',
-                  transition: 'all 0.3s ease',
+                  height: '250px',
+                  minHeight: '250px',
+                  maxHeight: '250px',
+                  width: '250px',
+                  minWidth: '250px',
+                  maxWidth: '250px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #fafafa 100%)',
+                  mx: 'auto',
+                  overflow: 'hidden',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transform: 'translateY(-8px) scale(1.02)',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08)',
+                    border: '1px solid rgba(139, 69, 19, 0.2)',
                   }
                 }}
+                onClick={() => handleEdit(user)}
               >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CardContent sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between',
+                  p: 2.5,
+                  position: 'relative',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden'
+                }}>
+                  {/* Top Section - Avatar and Name */}
+                  <Box sx={{ 
+                    textAlign: 'center', 
+                    mb: 1.5,
+                    minHeight: '90px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Avatar 
                       sx={{ 
-                        bgcolor: getRoleColor(user.role),
-                        mr: 2,
-                        width: 48,
-                        height: 48
+                        background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}CC 100%)`,
+                        width: 40,
+                        height: 40,
+                        mx: 'auto',
+                        mb: 0.8,
+                        fontSize: '1rem',
+                        boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
+                        border: '2px solid rgba(255, 255, 255, 0.8)'
                       }}
                     >
-                      <PersonIcon />
+                      <PersonIcon fontSize="small" />
                     </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                        {user.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email}
-                      </Typography>
-                    </Box>
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                      lineHeight: 1.1,
+                      mb: 0.2,
+                      color: '#2c3e50',
+                      letterSpacing: '0.05px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%',
+                      px: 1
+                    }}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{
+                      fontSize: '0.6rem',
+                      lineHeight: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      opacity: 0.7,
+                      maxWidth: '100%',
+                      px: 1
+                    }}>
+                      {user.email}
+                    </Typography>
                   </Box>
 
-                  <Box sx={{ mb: 2 }}>
+                  {/* Middle Section - Role and Branch */}
+                  <Box sx={{ 
+                    mb: 1.5, 
+                    textAlign: 'center',
+                    minHeight: '50px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Chip
                       label={getRoleDisplayName(user.role)}
                       size="small"
                       sx={{
-                        bgcolor: getRoleColor(user.role),
+                        background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}DD 100%)`,
                         color: 'white',
-                        fontWeight: 'bold'
+                        fontWeight: 600,
+                        fontSize: '0.6rem',
+                        mb: 0.3,
+                        width: '100%',
+                        height: '20px',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                        border: 'none',
+                        '& .MuiChip-label': {
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100%',
+                          padding: '0 8px'
+                        }
                       }}
                     />
                     {user.branch && (
@@ -510,25 +888,79 @@ function UserManagement() {
                         label={user.branch.name}
                         size="small"
                         variant="outlined"
-                        sx={{ ml: 1 }}
+                        sx={{ 
+                          fontSize: '0.55rem',
+                          width: '100%',
+                          height: '16px',
+                          borderColor: 'rgba(139, 69, 19, 0.3)',
+                          color: 'rgba(139, 69, 19, 0.8)',
+                          fontWeight: 500,
+                          '& .MuiChip-label': {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '100%',
+                            padding: '0 6px'
+                          }
+                        }}
                       />
                     )}
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                  {/* Bottom Section - Action Buttons */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    justifyContent: 'center',
+                    mt: 'auto',
+                    minHeight: '50px',
+                    alignItems: 'center'
+                  }}>
                     <IconButton
                       size="small"
-                      onClick={() => handleEdit(user)}
-                      sx={{ color: 'primary.main' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(user);
+                      }}
+                      sx={{ 
+                        color: '#1976d2',
+                        bgcolor: 'rgba(25, 118, 210, 0.08)',
+                        border: '1px solid rgba(25, 118, 210, 0.2)',
+                        width: 32,
+                        height: 32,
+                        '&:hover': {
+                          bgcolor: '#1976d2',
+                          color: 'white',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                          border: '1px solid #1976d2'
+                        }
+                      }}
                     >
-                      <EditIcon />
+                      <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(user.id || user.user_id)}
-                      sx={{ color: 'error.main' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(user.id || user.user_id);
+                      }}
+                      sx={{ 
+                        color: '#d32f2f',
+                        bgcolor: 'rgba(211, 47, 47, 0.08)',
+                        border: '1px solid rgba(211, 47, 47, 0.2)',
+                        width: 32,
+                        height: 32,
+                        '&:hover': {
+                          bgcolor: '#d32f2f',
+                          color: 'white',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)',
+                          border: '1px solid #d32f2f'
+                        }
+                      }}
                     >
-                      <DeleteIcon />
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>
                 </CardContent>
