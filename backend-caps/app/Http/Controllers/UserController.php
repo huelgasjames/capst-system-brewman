@@ -24,8 +24,8 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'required|string',
-            'branch_id' => 'nullable|integer|exists:branches,branch_id',
+            'role' => 'required|string|in:Branch Manager,Cashier,Barista,Staff',
+            'branch_id' => 'required|integer|exists:branches,branch_id',
         ]);
 
         $validated['password'] = bcrypt($validated['password']); // Hash password
@@ -55,7 +55,7 @@ class UserController extends Controller
     // Update user
     public function update(Request $request, $id)
     {
-        $user = User::find($id);
+        $user = User::where('user_id', $id)->first();
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -64,7 +64,7 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . $id . ',user_id',
             'password' => 'sometimes|nullable|min:6',
-            'role' => 'sometimes|string',
+            'role' => 'sometimes|string|in:Branch Manager,Cashier,Barista,Staff',
             'branch_id' => 'sometimes|nullable|integer|exists:branches,branch_id',
         ]);
 

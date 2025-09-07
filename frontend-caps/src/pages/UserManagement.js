@@ -86,6 +86,12 @@ function UserManagement() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    role: '',
+    branch_id: '',
+  });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -150,14 +156,24 @@ function UserManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Input change - ${name}:`, value); // Debug log
+    
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
     
-    // Clear password error when user types
+    // Clear errors when user types
     if (name === 'password' || name === 'confirmPassword') {
       setPasswordError('');
+    }
+    
+    // Clear form errors when user types
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
     }
   };
 
@@ -194,17 +210,13 @@ function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check if roles and branches are available
-    if (!canAddUsers) {
-      setSnackbar({
-        open: true,
-        message: 'Cannot add users: No roles or branches available. Please create roles and branches first.',
-        severity: 'error',
-      });
-      return;
-    }
+    console.log('Form submitted with data:', formData);
+    console.log('Can add users:', canAddUsers);
+    console.log('Available branches:', branches);
+    console.log('Available roles:', getAvailableRoles());
     
     if (!validatePassword()) {
+      console.log('Password validation failed');
       return;
     }
 
@@ -224,6 +236,9 @@ function UserManagement() {
       };
       
       console.log('Submitting user data:', dataToSend);
+      console.log('Request URL:', url);
+      console.log('Request method:', method);
+      console.log('Auth headers:', getAuthHeaders());
       
       // Only include password if it's provided (for new users or when updating)
       if (formData.password) {
@@ -236,7 +251,12 @@ function UserManagement() {
         body: JSON.stringify(dataToSend),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('Success response:', responseData);
         setSnackbar({
           open: true,
           message: editingUser ? 'User updated successfully!' : 'User created successfully!',
@@ -247,9 +267,11 @@ function UserManagement() {
       } else {
         const errorData = await response.json();
         console.error('User creation/update failed:', errorData);
+        console.error('Response status:', response.status);
+        console.error('Response status text:', response.statusText);
         setSnackbar({
           open: true,
-          message: errorData.message || 'Operation failed',
+          message: errorData.message || `Operation failed (${response.status})`,
           severity: 'error',
         });
       }
@@ -493,64 +515,26 @@ function UserManagement() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setOpenDialog(true)}
-            disabled={!canAddUsers}
-            size="large"
+              size="large"
             sx={{
-              background: canAddUsers 
-                ? 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)'
-                : '#ccc',
-              px: 4,
-              py: 1.5,
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              borderRadius: 2,
-              '&:hover': canAddUsers ? {
+              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                borderRadius: 2,
+              '&:hover': {
                 background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 25px rgba(139, 69, 19, 0.3)',
-              } : {},
-              '&:disabled': {
-                background: '#ccc',
-                color: '#666',
-                cursor: 'not-allowed',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(139, 69, 19, 0.3)',
               },
-              transition: 'all 0.3s ease',
+                transition: 'all 0.3s ease',
             }}
           >
               Add New User
           </Button>
           </Box>
         </Box>
-
-        {/* Warning Message for Missing Roles/Branches */}
-        {!canAddUsers && (
-          <Box sx={{ mb: 4 }}>
-            <Alert 
-              severity="warning" 
-              sx={{ 
-                borderRadius: 2,
-                '& .MuiAlert-message': {
-                  fontSize: '1rem'
-                }
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                Cannot Add Users
-              </Typography>
-              <Typography variant="body1">
-                {!hasAvailableRoles && !hasAvailableBranches && 
-                  "No roles and branches are available. Please create roles and branches first before adding users."
-                }
-                {!hasAvailableRoles && hasAvailableBranches && 
-                  "No roles are available. Please create roles first before adding users."
-                }
-                {hasAvailableRoles && !hasAvailableBranches && 
-                  "No branches are available. Please create branches first before adding users."
-                }
-              </Typography>
-            </Alert>
-          </Box>
-        )}
 
         {/* Role Count Cards - Fixed and Stable */}
         <Box sx={{ mb: 4 }}>
@@ -1081,7 +1065,7 @@ function UserManagement() {
         </DialogTitle>
         
         <DialogContent sx={{ pt: 4, pb: 2 }}>
-          <Box component="form" onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={handleSubmit} id="user-form">
             <Grid container spacing={4}>
               {/* Personal Information Section */}
               <Grid item xs={12}>
@@ -1125,6 +1109,8 @@ function UserManagement() {
                           value={formData.name}
                           onChange={handleInputChange}
                           required
+                          error={!!formErrors.name}
+                          helperText={formErrors.name}
                           variant="filled"
                           size="large"
                           placeholder="Enter full name"
@@ -1186,6 +1172,8 @@ function UserManagement() {
                           value={formData.email}
                           onChange={handleInputChange}
                           required
+                          error={!!formErrors.email}
+                          helperText={formErrors.email}
                           variant="filled"
                           size="large"
                           placeholder="Enter email address"
@@ -1446,7 +1434,7 @@ function UserManagement() {
                         }}>
                           User Role *
                         </Typography>
-                        <FormControl fullWidth variant="filled" size="large">
+                        <FormControl fullWidth variant="filled" size="large" error={!!formErrors.role}>
                           <Select
                             name="role"
                             value={formData.role}
@@ -1510,12 +1498,12 @@ function UserManagement() {
                         </FormControl>
                         <Typography variant="caption" sx={{ 
                           fontSize: '0.9rem', 
-                          color: 'text.secondary',
+                          color: formErrors.role ? 'error.main' : 'text.secondary',
                           mt: 1,
                           ml: 1,
                           display: 'block'
                         }}>
-                          Choose the user's role and permissions
+                          {formErrors.role || 'Choose the user\'s role and permissions'}
                         </Typography>
                       </Box>
                     </Grid>
@@ -1529,13 +1517,14 @@ function UserManagement() {
                           mb: 1.5,
                           ml: 1
                         }}>
-                          Branch Assignment
+                          Branch Assignment *
                         </Typography>
-                        <FormControl fullWidth variant="filled" size="large">
+                        <FormControl fullWidth variant="filled" size="large" error={!!formErrors.branch_id}>
                           <Select
                             name="branch_id"
                             value={formData.branch_id}
                             onChange={handleInputChange}
+                            required
                             displayEmpty
                             sx={{
                               fontSize: '1.1rem',
@@ -1573,9 +1562,6 @@ function UserManagement() {
                             <MenuItem value="" disabled>
                               <em>Select branch</em>
                             </MenuItem>
-                            <MenuItem value="">
-                              <em>No Branch Assigned</em>
-                            </MenuItem>
                             {branches.map((branch) => (
                               <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1590,12 +1576,12 @@ function UserManagement() {
                         </FormControl>
                         <Typography variant="caption" sx={{ 
                           fontSize: '0.9rem', 
-                          color: 'text.secondary',
+                          color: formErrors.branch_id ? 'error.main' : 'text.secondary',
                           mt: 1,
                           ml: 1,
                           display: 'block'
                         }}>
-                          Assign user to a specific branch (optional)
+                          {formErrors.branch_id || 'Assign user to a specific branch (required)'}
                         </Typography>
                       </Box>
                     </Grid>
@@ -1632,9 +1618,9 @@ function UserManagement() {
           </Button>
           <Button 
             type="submit" 
+            form="user-form"
             variant="contained"
-            onClick={handleSubmit}
-            disabled={!formData.name || !formData.email || !formData.role || !canAddUsers}
+            disabled={!formData.name || !formData.email || !formData.role || !formData.branch_id || !canAddUsers}
             size="large"
             sx={{
               background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
