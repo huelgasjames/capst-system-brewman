@@ -55,6 +55,9 @@ import {
   PointOfSale as CashierIcon,
   LocalCafe as BaristaIcon,
   Groups as StaffIcon,
+  TrendingUp as TrendingUpIcon,
+  CheckCircle as CheckCircleIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -190,6 +193,16 @@ function UserManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if roles and branches are available
+    if (!canAddUsers) {
+      setSnackbar({
+        open: true,
+        message: 'Cannot add users: No roles or branches available. Please create roles and branches first.',
+        severity: 'error',
+      });
+      return;
+    }
     
     if (!validatePassword()) {
       return;
@@ -425,6 +438,18 @@ function UserManagement() {
     );
   }
 
+  // Check if roles and branches are available
+  const availableRoles = getAvailableRoles();
+  const hasAvailableRoles = availableRoles && availableRoles.length > 0;
+  const hasAvailableBranches = branches && branches.length > 0;
+  const canAddUsers = hasAvailableRoles && hasAvailableBranches;
+
+  // Calculate user statistics by role
+  const branchManagerCount = users.filter(user => user.role === 'Branch Manager').length;
+  const cashierCount = users.filter(user => user.role === 'Cashier').length;
+  const baristaCount = users.filter(user => user.role === 'Barista').length;
+  const staffCount = users.filter(user => user.role === 'Staff').length;
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -439,25 +464,93 @@ function UserManagement() {
       
       <Box sx={{ p: 3 }}>
 
-        {/* Page Header */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+        {/* Enhanced Header */}
+        <Box sx={{ 
+          mb: 4, 
+          p: 3, 
+          background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+          borderRadius: 3,
+          border: '1px solid #e0e0e0'
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box>
+              <Typography variant="h3" component="h1" sx={{ 
+                fontWeight: 'bold', 
+                color: 'primary.main', 
+                mb: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <PersonIcon sx={{ fontSize: 40 }} />
             User Management
           </Typography>
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                Manage your coffee shop staff and user accounts
+              </Typography>
+            </Box>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setOpenDialog(true)}
+            disabled={!canAddUsers}
+            size="large"
             sx={{
-              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
-              '&:hover': {
+              background: canAddUsers 
+                ? 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)'
+                : '#ccc',
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              borderRadius: 2,
+              '&:hover': canAddUsers ? {
                 background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(139, 69, 19, 0.3)',
+              } : {},
+              '&:disabled': {
+                background: '#ccc',
+                color: '#666',
+                cursor: 'not-allowed',
               },
+              transition: 'all 0.3s ease',
             }}
           >
-            Add User
+              Add New User
           </Button>
+          </Box>
         </Box>
+
+        {/* Warning Message for Missing Roles/Branches */}
+        {!canAddUsers && (
+          <Box sx={{ mb: 4 }}>
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                borderRadius: 2,
+                '& .MuiAlert-message': {
+                  fontSize: '1rem'
+                }
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                Cannot Add Users
+              </Typography>
+              <Typography variant="body1">
+                {!hasAvailableRoles && !hasAvailableBranches && 
+                  "No roles and branches are available. Please create roles and branches first before adding users."
+                }
+                {!hasAvailableRoles && hasAvailableBranches && 
+                  "No roles are available. Please create roles first before adding users."
+                }
+                {hasAvailableRoles && !hasAvailableBranches && 
+                  "No branches are available. Please create branches first before adding users."
+                }
+              </Typography>
+            </Alert>
+          </Box>
+        )}
 
         {/* Role Count Cards - Fixed and Stable */}
         <Box sx={{ mb: 4 }}>
@@ -516,7 +609,7 @@ function UserManagement() {
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    {roleCounts.branchManager}
+                    {branchManagerCount}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
@@ -525,7 +618,7 @@ function UserManagement() {
                     fontWeight: 500,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    Branch Manager{roleCounts.branchManager !== 1 ? 's' : ''}
+                    Branch Manager{branchManagerCount !== 1 ? 's' : ''}
                   </Typography>
                 </CardContent>
               </Card>
@@ -582,7 +675,7 @@ function UserManagement() {
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    {roleCounts.cashier}
+                    {cashierCount}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
@@ -591,7 +684,7 @@ function UserManagement() {
                     fontWeight: 500,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    Cashier{roleCounts.cashier !== 1 ? 's' : ''}
+                    Cashier{cashierCount !== 1 ? 's' : ''}
                   </Typography>
                 </CardContent>
               </Card>
@@ -648,7 +741,7 @@ function UserManagement() {
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    {roleCounts.barista}
+                    {baristaCount}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
@@ -657,7 +750,7 @@ function UserManagement() {
                     fontWeight: 500,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    Barista{roleCounts.barista !== 1 ? 's' : ''}
+                    Barista{baristaCount !== 1 ? 's' : ''}
                   </Typography>
                 </CardContent>
               </Card>
@@ -714,7 +807,7 @@ function UserManagement() {
                     lineHeight: 1,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    {roleCounts.staff}
+                    {staffCount}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     opacity: 0.95, 
@@ -723,7 +816,7 @@ function UserManagement() {
                     fontWeight: 500,
                     textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>
-                    Staff Member{roleCounts.staff !== 1 ? 's' : ''}
+                    Staff Member{staffCount !== 1 ? 's' : ''}
                   </Typography>
                 </CardContent>
               </Card>
@@ -1541,7 +1634,7 @@ function UserManagement() {
             type="submit" 
             variant="contained"
             onClick={handleSubmit}
-            disabled={!formData.name || !formData.email || !formData.role}
+            disabled={!formData.name || !formData.email || !formData.role || !canAddUsers}
             size="large"
             sx={{
               background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',

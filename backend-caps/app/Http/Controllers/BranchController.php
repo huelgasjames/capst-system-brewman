@@ -41,11 +41,14 @@ class BranchController extends Controller
             $request->validate([
                 'branch_name' => 'required|string|max:255',
                 'location' => 'required|string|max:500',
+
+                'status' => 'nullable|string|in:active,inactive,maintenance',
             ]);
 
             $branch = Branch::create([
                 'branch_name' => $request->branch_name,
                 'location' => $request->location,
+                'status' => $request->status ?? 'active',
             ]);
 
             return response()->json([
@@ -93,12 +96,14 @@ class BranchController extends Controller
             $request->validate([
                 'branch_name' => 'required|string|max:255',
                 'location' => 'required|string|max:500',
+                'status' => 'nullable|string|in:active,inactive,maintenance',
             ]);
 
             $branch = Branch::findOrFail($id);
             $branch->update([
                 'branch_name' => $request->branch_name,
                 'location' => $request->location,
+                'status' => $request->status ?? $branch->status,
             ]);
 
             return response()->json([

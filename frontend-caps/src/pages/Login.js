@@ -11,16 +11,19 @@ import {
   InputAdornment,
   IconButton,
   Paper,
+  Checkbox,
+  FormControlLabel,
+  Link,
+  Divider,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
   VisibilityOff as ViewOffIcon,
-  Lock as LockIcon,
-  Person as PersonIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import BMLogo from '../BM-Logo.png';
 
 function Login() {
   const { login } = useAuth();
@@ -34,6 +37,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -86,166 +90,330 @@ function Login() {
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #CD853F 100%)',
         p: 2,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+            background: `
+            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 0%, transparent 50%)
+          `,
+          pointerEvents: 'none',
+        },
       }}
     >
       <Card
         elevation={24}
         sx={{
-          maxWidth: 450,
+          maxWidth: 900,
           width: '100%',
-          borderRadius: 4,
+          borderRadius: 6,
           overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 25px 80px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          minHeight: 600,
+          flexDirection: { xs: 'column', md: 'row' },
         }}
       >
-        {/* Header */}
+        {/* Left Section - Coffee Illustration */}
         <Box
           sx={{
-            background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
-            p: 4,
-            textAlign: 'center',
-            color: 'white',
+            flex: 1,
+            background: 'linear-gradient(135deg, #F5F5DC 0%, #FAF0E6 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: { xs: 3, md: 4 },
+            position: 'relative',
+            minHeight: { xs: 300, md: 'auto' },
           }}
         >
-          <LockIcon sx={{ fontSize: 48, mb: 2 }} />
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Admin Login
+          {/* BM-Logo */}
+          <Box
+            sx={{
+              mb: 4,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Box
+              component="img"
+              src={BMLogo}
+              alt="Brew Manager Logo"
+              sx={{
+                height: { xs: 120, md: 150 },
+                width: 'auto',
+                maxWidth: '100%',
+                filter: 'none',
+              }}
+            />
+          </Box>
+
+          {/* Text */}
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 'bold',
+              color: '#2C2C2C',
+              mb: 1,
+              textAlign: 'center',
+              fontSize: { xs: '2rem', md: '3rem' },
+            }}
+          >
+            BrewManager
           </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Access your Brew Manager Dashboard
+          <Typography
+            variant="h6"
+            sx={{
+              color: '#2C2C2C',
+              textAlign: 'center',
+              fontWeight: 400,
+              maxWidth: 300,
+              fontSize: { xs: '1rem', md: '1.25rem' },
+            }}
+          >
+            A Comprehensive Web Based Management System
           </Typography>
         </Box>
 
-        <CardContent sx={{ p: 4 }}>
+        {/* Right Section - Login Form */}
+        <Box
+          sx={{
+            flex: 1,
+            background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            p: { xs: 3, md: 4 },
+            position: 'relative',
+          }}
+        >
+          {/* Logo */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              mb: 2,
+            }}
+          >
+            <Box
+              component="img"
+              src={BMLogo}
+              alt="Brew Manager Logo"
+              sx={{
+                height: 40,
+                width: 'auto',
+                filter: 'brightness(0) invert(1)',
+              }}
+            />
+          </Box>
+
+          {/* Welcome Text */}
+          <Typography
+            variant="h4"
+            sx={{
+              color: 'white',
+              fontWeight: 'bold',
+              mb: 4,
+              textAlign: 'center',
+              fontSize: { xs: '1.5rem', md: '2rem' },
+            }}
+          >
+            Welcome Back, Please login to your account
+          </Typography>
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Email Address"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              variant="outlined"
-              size="large"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1.1rem',
-                  padding: '16px 14px',
-                  height: '56px',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                    borderWidth: 2,
+          <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
+            {/* Email Field */}
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'white',
+                  mb: 1,
+                  fontWeight: 500,
+                }}
+              >
+                Email Address
+              </Typography>
+              <TextField
+                fullWidth
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#F5F5DC',
+                    },
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                    borderWidth: 3,
+                  '& .MuiInputBase-input': {
+                    color: 'white',
+                    padding: '14px',
                   },
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1.1rem',
-                },
-              }}
-            />
+                }}
+              />
+            </Box>
 
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              variant="outlined"
-              size="large"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      sx={{ color: 'primary.main' }}
-                    >
-                      {showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
+            {/* Password Field */}
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'white',
+                  mb: 1,
+                  fontWeight: 500,
+                }}
+              >
+                Password
+              </Typography>
+              <TextField
+                fullWidth
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        sx={{ color: 'white' }}
+                      >
+                        {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#F5F5DC',
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    color: 'white',
+                    padding: '14px',
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Remember Me and Forgot Password */}
+            <Box
               sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 mb: 4,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1.1rem',
-                  padding: '16px 14px',
-                  height: '56px',
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                    borderWidth: 2,
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                    borderWidth: 3,
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1.1rem',
-                },
               }}
-            />
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    sx={{
+                      color: '#F5F5DC',
+                      '&.Mui-checked': {
+                        color: '#F5F5DC',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ color: 'white' }}>
+                    Remember me
+                  </Typography>
+                }
+              />
+              <Link
+                href="#"
+                sx={{
+                  color: '#F5F5DC',
+                  textDecoration: 'none',
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Forgot password?
+              </Link>
+            </Box>
 
+            {/* Sign In Button */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
               disabled={loading || !formData.email || !formData.password}
-              size="large"
               sx={{
-                background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
-                height: '56px',
-                fontSize: '1.1rem',
+                backgroundColor: '#F5F5DC',
+                color: '#8B4513',
+                height: '48px',
+                fontSize: '1rem',
                 fontWeight: 600,
                 borderRadius: 2,
                 textTransform: 'none',
+                mb: 2,
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+                  backgroundColor: '#FAF0E6',
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(139, 69, 19, 0.4)',
+                  boxShadow: '0 4px 12px rgba(245, 245, 220, 0.3)',
                 },
                 '&:disabled': {
-                  background: '#ccc',
-                  transform: 'none',
-                  boxShadow: 'none',
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                  color: 'rgba(255, 255, 255, 0.5)',
                 },
                 transition: 'all 0.3s ease',
               }}
             >
               {loading ? (
-                <CircularProgress size={24} sx={{ color: 'white' }} />
+                <CircularProgress size={24} sx={{ color: '#8B4513' }} />
               ) : (
-                'Sign In'
+                'Sign in'
               )}
             </Button>
+
           </Box>
-        </CardContent>
+        </Box>
       </Card>
+
     </Box>
   );
 }

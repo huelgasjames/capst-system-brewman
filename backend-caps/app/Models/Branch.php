@@ -18,6 +18,7 @@ class Branch extends Model
     protected $fillable = [
         'branch_name',
         'location',
+        'status',
     ];
 
     // Relation: Branch has many users

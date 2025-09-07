@@ -50,8 +50,13 @@ import {
   Assignment as AssignmentIcon,
   RemoveCircle as RemoveIcon,
   Visibility as ViewIcon,
+  TrendingUp as TrendingUpIcon,
+  Store as StoreIcon,
+  People as PeopleIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 
 function BranchManagement() {
   const { admin, getAuthHeaders } = useAuth();
@@ -266,23 +271,45 @@ function BranchManagement() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/branches/assign-manager`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          branch_id: selectedBranch.branch_id || selectedBranch.id,
-          user_id: userAssignment.user_id,
-          role: userAssignment.role,
-        }),
-      });
+      // For Branch Manager role, use the assign-manager endpoint
+      if (userAssignment.role === 'Branch Manager') {
+        const response = await fetch(`${API_BASE_URL}/branches/assign-manager`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            branch_id: selectedBranch.branch_id || selectedBranch.id,
+            user_id: userAssignment.user_id,
+          }),
+        });
 
-      if (response.ok) {
-        showSnackbar('User assigned successfully!', 'success');
-        fetchBranches();
-        handleCloseUserDialog();
+        if (response.ok) {
+          showSnackbar('Branch Manager assigned successfully!', 'success');
+          fetchBranches();
+          handleCloseUserDialog();
+        } else {
+          const data = await response.json();
+          showSnackbar('Failed to assign Branch Manager: ' + (data.message || 'Unknown error'), 'error');
+        }
       } else {
-        const data = await response.json();
-        showSnackbar('Failed to assign user: ' + (data.message || 'Unknown error'), 'error');
+        // For other roles, update the user directly
+        const response = await fetch(`${API_BASE_URL}/users/${userAssignment.user_id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            branch_id: selectedBranch.branch_id || selectedBranch.id,
+            role: userAssignment.role,
+            _method: 'PUT'
+          }),
+        });
+
+        if (response.ok) {
+          showSnackbar('User assigned successfully!', 'success');
+          fetchBranches();
+          handleCloseUserDialog();
+        } else {
+          const data = await response.json();
+          showSnackbar('Failed to assign user: ' + (data.message || 'Unknown error'), 'error');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -359,12 +386,30 @@ function BranchManagement() {
 
   const getRoleColor = (role) => {
     const colors = {
+      'Branch Manager': '#1976d2',
       'branch_manager': '#1976d2',
+      'Cashier': '#2e7d32',
       'cashier': '#2e7d32',
+      'Barista': '#ed6c02',
       'barista': '#ed6c02',
+      'Staff': '#9c27b0',
       'staff': '#9c27b0',
     };
     return colors[role] || '#666';
+  };
+
+  const getBranchManager = (branch) => {
+    if (!branch.users || !Array.isArray(branch.users)) return null;
+    return branch.users.find(user => 
+      user.role === 'Branch Manager' || user.role === 'branch_manager'
+    );
+  };
+
+  const getOtherStaff = (branch) => {
+    if (!branch.users || !Array.isArray(branch.users)) return [];
+    return branch.users.filter(user => 
+      user.role !== 'Branch Manager' && user.role !== 'branch_manager'
+    );
   };
 
   // Check if user has permission to manage branches
@@ -389,31 +434,192 @@ function BranchManagement() {
     );
   }
 
+  // Calculate branch statistics
+  const totalBranches = branches.length;
+  const activeBranches = branches.filter(branch => branch.status === 'active').length;
+  const totalStaff = branches.reduce((total, branch) => total + (branch.users?.length || 0), 0);
+  const branchesWithManagers = branches.filter(branch => 
+    branch.users?.some(user => user.role === 'Branch Manager' || user.role === 'branch_manager')
+  ).length;
+
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
-            Branch Management
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            Manage your coffee shop branches and staff assignments
-          </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Header />
+      
+      <Box sx={{ p: 3 }}>
+      {/* Enhanced Header */}
+      <Box sx={{ 
+        mb: 4, 
+        p: 3, 
+        background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+        borderRadius: 3,
+        border: '1px solid #e0e0e0'
+      }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h3" component="h1" sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main', 
+              mb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2
+            }}>
+              <StoreIcon sx={{ fontSize: 40 }} />
+              Branch Management
+            </Typography>
+            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+              Manage your coffee shop branches and staff assignments
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            size="large"
+            sx={{
+              background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              borderRadius: 2,
+              '&:hover': {
+                background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(139, 69, 19, 0.3)',
+              },
+              transition: 'all 0.3s ease',
+            }}
+          >
+            Add New Branch
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
-            '&:hover': {
-              background: 'linear-gradient(45deg, #A0522D 30%, #CD853F 90%)',
-            },
-          }}
-        >
-          Add Branch
-        </Button>
+      </Box>
+
+      {/* Total Branch Overview */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ 
+          fontWeight: 'bold', 
+          color: 'text.primary', 
+          mb: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <TrendingUpIcon sx={{ color: 'primary.main' }} />
+          Total Branch Overview
+        </Typography>
+        
+        <Grid container spacing={3}>
+          {/* Total Branches Card */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              p: 3, 
+              height: '100%',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 30px rgba(102, 126, 234, 0.4)',
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    {totalBranches}
+                  </Typography>
+                  <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                    Total Branches
+                  </Typography>
+                </Box>
+                <StoreIcon sx={{ fontSize: 48, opacity: 0.8 }} />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Active Branches Card */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              p: 3, 
+              height: '100%',
+              background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+              color: 'white',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 30px rgba(17, 153, 142, 0.4)',
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    {activeBranches}
+                  </Typography>
+                  <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                    Active Branches
+                  </Typography>
+                </Box>
+                <CheckCircleIcon sx={{ fontSize: 48, opacity: 0.8 }} />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Total Staff Card */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              p: 3, 
+              height: '100%',
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              color: 'white',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 30px rgba(240, 147, 251, 0.4)',
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    {totalStaff}
+                  </Typography>
+                  <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                    Total Users
+                  </Typography>
+                </Box>
+                <PeopleIcon sx={{ fontSize: 48, opacity: 0.8 }} />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Branches with Managers Card */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ 
+              p: 3, 
+              height: '100%',
+              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              color: 'white',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 30px rgba(79, 172, 254, 0.4)',
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    {branchesWithManagers}
+                  </Typography>
+                  <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                    With Managers
+                  </Typography>
+                </Box>
+                <BusinessIcon sx={{ fontSize: 48, opacity: 0.8 }} />
+              </Box>
+            </Card>
+          </Grid>
+        </Grid>
       </Box>
 
 
@@ -479,11 +685,91 @@ function BranchManagement() {
                     </Typography>
                   </Box>
 
-                  {/* Staff Section */}
+                  {/* Branch Manager Section */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>
+                      Branch Manager
+                    </Typography>
+                    {getBranchManager(branch) ? (
+                      <Card sx={{ 
+                        p: 2, 
+                        bgcolor: 'primary.light', 
+                        color: 'primary.contrastText',
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        borderRadius: 2
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar sx={{ 
+                            width: 40, 
+                            height: 40, 
+                            fontSize: '1.2rem',
+                            bgcolor: 'primary.main',
+                            color: 'white'
+                          }}>
+                            {getBranchManager(branch).name?.charAt(0)?.toUpperCase() || 'M'}
+                          </Avatar>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'white' }}>
+                              {getBranchManager(branch).name}
+                            </Typography>
+                            <Chip
+                              label="Branch Manager"
+                              size="small"
+                              sx={{
+                                bgcolor: 'white',
+                                color: 'primary.main',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                height: 20,
+                              }}
+                            />
+                          </Box>
+                          <Tooltip title="Unassign Manager">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleUnassignUser(getBranchManager(branch).user_id || getBranchManager(branch).id, branch.branch_id || branch.id)}
+                              sx={{ color: 'white' }}
+                            >
+                              <RemoveIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Card>
+                    ) : (
+                      <Card sx={{ 
+                        p: 2, 
+                        bgcolor: 'grey.100', 
+                        border: '2px dashed',
+                        borderColor: 'grey.300',
+                        borderRadius: 2,
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                          No Branch Manager Assigned
+                        </Typography>
+                        <Button
+                          size="small"
+                          startIcon={<AssignmentIcon />}
+                          onClick={() => handleOpenUserDialog(branch)}
+                          sx={{
+                            color: 'primary.main',
+                            fontSize: '0.7rem',
+                            textTransform: 'none',
+                            mt: 1,
+                          }}
+                        >
+                          Assign Manager
+                        </Button>
+                      </Card>
+                    )}
+                  </Box>
+
+                  {/* Other Staff Section */}
                   <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                        Assigned Staff
+                        Other Staff ({getOtherStaff(branch).length})
                       </Typography>
                       <Button
                         size="small"
@@ -499,9 +785,9 @@ function BranchManagement() {
                       </Button>
                     </Box>
                     
-                    {branch.users && branch.users.length > 0 ? (
+                    {getOtherStaff(branch).length > 0 ? (
                       <List dense sx={{ p: 0 }}>
-                        {branch.users.map((user) => (
+                        {getOtherStaff(branch).map((user) => (
                           <ListItem key={user.user_id || user.id} sx={{ p: 0, mb: 0.5 }}>
                             <ListItemAvatar sx={{ minWidth: 32 }}>
                               <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
@@ -540,7 +826,7 @@ function BranchManagement() {
                       </List>
                     ) : (
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-                        No staff assigned
+                        No other staff assigned
                       </Typography>
                     )}
                   </Box>
@@ -548,15 +834,26 @@ function BranchManagement() {
                   {/* Branch Stats */}
                   <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #eee' }}>
                     <Grid container spacing={1}>
-                      <Grid item xs={6}>
+                      <Grid item xs={4}>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                          Staff Count
+                          Total Staff
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                           {branch.users?.length || 0}
                         </Typography>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={4}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          Manager
+                        </Typography>
+                        <Typography variant="body2" sx={{ 
+                          color: getBranchManager(branch) ? 'success.main' : 'error.main',
+                          fontWeight: 'bold'
+                        }}>
+                          {getBranchManager(branch) ? '✓ Assigned' : '✗ None'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={4}>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           Branch ID
                         </Typography>
@@ -909,10 +1206,10 @@ function BranchManagement() {
                       },
                     }}
                   >
-                    <MenuItem value="branch_manager">Branch Manager</MenuItem>
-                    <MenuItem value="cashier">Cashier</MenuItem>
-                    <MenuItem value="barista">Barista</MenuItem>
-                    <MenuItem value="staff">Staff</MenuItem>
+                    <MenuItem value="Branch Manager">Branch Manager</MenuItem>
+                    <MenuItem value="Cashier">Cashier</MenuItem>
+                    <MenuItem value="Barista">Barista</MenuItem>
+                    <MenuItem value="Staff">Staff</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -988,6 +1285,7 @@ function BranchManagement() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      </Box>
     </Box>
   );
 }
