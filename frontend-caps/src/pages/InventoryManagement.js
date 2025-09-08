@@ -53,6 +53,7 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 import api from '../services/api';
 
 function TabPanel({ children, value, index, ...other }) {
@@ -137,6 +138,7 @@ function InventoryManagement() {
   useEffect(() => {
     console.log('Admin object:', admin);
     console.log('Branches array:', branches);
+    console.log('Current productForm.branch_id:', productForm.branch_id);
     
     if (admin?.branch_id && branches.length > 0) {
       // For Branch Managers - set their specific branch
@@ -153,7 +155,7 @@ function InventoryManagement() {
         branch_id: branches[0].branch_id
       }));
     }
-  }, [admin, branches]);
+  }, [admin, branches, productForm.branch_id]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -226,7 +228,15 @@ function InventoryManagement() {
       console.log('Fetching branches...');
       const response = await api.get('/branches');
       console.log('Branches response:', response.data);
-      const branchesData = response.data.data?.data || response.data.data || response.data || [];
+      
+      let branchesData = [];
+      if (response.data.success) {
+        branchesData = response.data.data?.data || response.data.data || [];
+      } else {
+        console.error('API returned error:', response.data.message);
+        setError('Failed to fetch branches: ' + response.data.message);
+      }
+      
       console.log('Branches data:', branchesData);
       
       // Filter branches based on user role
@@ -240,6 +250,7 @@ function InventoryManagement() {
       setBranches(filteredBranches);
     } catch (err) {
       console.error('Failed to fetch branches:', err);
+      setError('Failed to fetch branches: ' + (err.message || 'Network error'));
       setBranches([]);
     }
   };
@@ -538,40 +549,65 @@ function InventoryManagement() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 6, mb: 6, px: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 5 }}>
-        <Box>
-          <Typography variant="h3" sx={{ color: '#8B4513', fontWeight: 'bold', mb: 2 }}>
-            Inventory Management
-          </Typography>
-          {admin?.branch_id && branches.length > 0 && (
-            <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-              Managing: {branches.find(b => b.branch_id === admin.branch_id)?.name || 'Your Branch'}
-            </Typography>
-          )}
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Header />
+      
+      <Box sx={{ p: 3 }}>
+        {/* Enhanced Header */}
+        <Box sx={{ 
+          mb: 4, 
+          p: 3, 
+          background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+          borderRadius: 3,
+          border: '1px solid #e0e0e0'
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box>
+              <Typography variant="h3" component="h1" sx={{ 
+                fontWeight: 'bold', 
+                color: 'primary.main', 
+                mb: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <InventoryIcon sx={{ fontSize: 40 }} />
+                Inventory Management
+              </Typography>
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                Manage your coffee shop inventory, products, and stock levels
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                resetProductForm();
+                setEditingProduct(null);
+                setError(null);
+                setProductDialog(true);
+              }}
+              size="large"
+              sx={{
+                bgcolor: 'primary.main',
+                fontSize: '1.1rem',
+                px: 3,
+                py: 1.5,
+                height: '48px',
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(139, 69, 19, 0.3)',
+                '&:hover': { 
+                  bgcolor: 'primary.dark',
+                  boxShadow: '0 6px 16px rgba(139, 69, 19, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Add Product
+            </Button>
+          </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetProductForm();
-            setEditingProduct(null);
-            setError(null);
-            setProductDialog(true);
-          }}
-          size="large"
-          sx={{
-            bgcolor: '#8B4513',
-            fontSize: '1.2rem',
-            px: 4,
-            py: 2,
-            height: '56px',
-            '&:hover': { bgcolor: '#A0522D' }
-          }}
-        >
-          Add Product
-        </Button>
-      </Box>
 
       {/* Statistics Cards */}
       <Grid container spacing={4} sx={{ mb: 5 }}>
@@ -1054,6 +1090,58 @@ function InventoryManagement() {
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="large">
+                  <InputLabel sx={{ fontSize: '1.1rem' }}>Branch *</InputLabel>
+                  <Select
+                    value={productForm.branch_id}
+                    onChange={(e) => setProductForm({ ...productForm, branch_id: e.target.value })}
+                    required
+                    displayEmpty
+                    disabled={admin?.branch_id ? true : false} // Disable for Branch Managers
+                    sx={{
+                      fontSize: '1.2rem',
+                      height: '64px',
+                      '& .MuiSelect-select': {
+                        padding: '16px 14px',
+                      },
+                    }}
+                    renderValue={(selected) => {
+                      if (!selected) {
+                        return <em style={{ color: '#999', fontSize: '1.2rem' }}>Select a branch</em>;
+                      }
+                      const branch = branches.find(b => b.branch_id === selected);
+                      return branch ? branch.name : 'Unknown Branch';
+                    }}
+                  >
+                    <MenuItem value="" disabled sx={{ fontSize: '1.1rem' }}>
+                      <em>Select a branch</em>
+                    </MenuItem>
+                    {branches.length > 0 ? (
+                      branches.map((branch) => (
+                        <MenuItem key={branch.branch_id} value={branch.branch_id} sx={{ fontSize: '1.1rem' }}>
+                          {branch.name}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled sx={{ fontSize: '1.1rem' }}>
+                        <em>Loading branches...</em>
+                      </MenuItem>
+                    )}
+                  </Select>
+                  {admin?.branch_id && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1rem' }}>
+                      Branch is automatically set to your assigned branch
+                    </Typography>
+                  )}
+                  {/* Debug info - remove this in production */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.8rem', display: 'block' }}>
+                      Debug: {branches.length} branches loaded, selected: {productForm.branch_id}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Base Price"
@@ -1099,46 +1187,6 @@ function InventoryManagement() {
                     },
                   }}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="large">
-                  <InputLabel sx={{ fontSize: '1.1rem' }}>Branch *</InputLabel>
-                  <Select
-                    value={productForm.branch_id}
-                    onChange={(e) => setProductForm({ ...productForm, branch_id: e.target.value })}
-                    required
-                    displayEmpty
-                    disabled={admin?.branch_id ? true : false} // Disable for Branch Managers
-                    sx={{
-                      fontSize: '1.2rem',
-                      height: '64px',
-                      '& .MuiSelect-select': {
-                        padding: '16px 14px',
-                      },
-                    }}
-                    renderValue={(selected) => {
-                      if (!selected) {
-                        return <em style={{ color: '#999', fontSize: '1.2rem' }}>Select a branch</em>;
-                      }
-                      const branch = branches.find(b => b.branch_id === selected);
-                      return branch ? branch.name : 'Unknown Branch';
-                    }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontSize: '1.1rem' }}>
-                      <em>Select a branch</em>
-                    </MenuItem>
-                    {branches.map((branch) => (
-                      <MenuItem key={branch.branch_id} value={branch.branch_id} sx={{ fontSize: '1.1rem' }}>
-                        {branch.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {admin?.branch_id && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1rem' }}>
-                      Branch is automatically set to your assigned branch
-                    </Typography>
-                  )}
-                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel
@@ -1713,7 +1761,8 @@ function InventoryManagement() {
           {success}
         </Alert>
       </Snackbar>
-    </Container>
+      </Box>
+    </Box>
   );
 }
 
