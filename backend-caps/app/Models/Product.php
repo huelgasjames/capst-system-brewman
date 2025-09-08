@@ -19,12 +19,14 @@ class Product extends Model
         'product_unit',
         'sale_unit',
         'base_price',
+        'low_stock_threshold',
         'branch_id',
         'is_active'
     ];
 
     protected $casts = [
         'base_price' => 'decimal:2',
+        'low_stock_threshold' => 'integer',
         'is_active' => 'boolean'
     ];
 
@@ -62,5 +64,47 @@ class Product extends Model
             ->sum('quantity');
             
         return $in - $out;
+    }
+
+    // Check if product is low on stock for a specific branch
+    public function isLowStock($branchId)
+    {
+        $currentStock = $this->getCurrentStock($branchId);
+        return $currentStock <= $this->low_stock_threshold && $currentStock > 0;
+    }
+
+    // Check if product is out of stock for a specific branch
+    public function isOutOfStock($branchId)
+    {
+        return $this->getCurrentStock($branchId) <= 0;
+    }
+
+    // Get stock status for a specific branch
+    public function getStockStatus($branchId)
+    {
+        $currentStock = $this->getCurrentStock($branchId);
+        
+        if ($currentStock <= 0) {
+            return 'out_of_stock';
+        } elseif ($currentStock <= $this->low_stock_threshold) {
+            return 'low_stock';
+        } else {
+            return 'in_stock';
+        }
+    }
+
+    // Get stock status with color for UI
+    public function getStockStatusWithColor($branchId)
+    {
+        $status = $this->getStockStatus($branchId);
+        
+        switch ($status) {
+            case 'out_of_stock':
+                return ['status' => 'Out of Stock', 'color' => 'error'];
+            case 'low_stock':
+                return ['status' => 'Low Stock', 'color' => 'warning'];
+            default:
+                return ['status' => 'In Stock', 'color' => 'success'];
+        }
     }
 }

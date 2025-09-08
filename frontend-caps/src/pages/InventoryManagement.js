@@ -77,6 +77,7 @@ function InventoryManagement() {
   const [inventoryLogs, setInventoryLogs] = useState([]);
   const [branches, setBranches] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -92,11 +93,11 @@ function InventoryManagement() {
   const [productForm, setProductForm] = useState({
     name: '',
     category: '',
-    description: '',
     product_unit: '',
     sale_unit: '',
     base_price: '',
-    branch_id: admin?.branch_id || '',
+    low_stock_threshold: 10,
+    branch_id: '',
     is_active: true
   });
 
@@ -132,6 +133,28 @@ function InventoryManagement() {
     }
   }, [admin]);
 
+  // Set default branch_id when admin or branches are available
+  useEffect(() => {
+    console.log('Admin object:', admin);
+    console.log('Branches array:', branches);
+    
+    if (admin?.branch_id && branches.length > 0) {
+      // For Branch Managers - set their specific branch
+      console.log('Setting branch_id to admin branch:', admin.branch_id);
+      setProductForm(prev => ({
+        ...prev,
+        branch_id: admin.branch_id
+      }));
+    } else if (!admin?.branch_id && branches.length > 0 && !productForm.branch_id) {
+      // For SuperAdmin users - set the first branch as default
+      console.log('Setting default branch to first available branch for SuperAdmin');
+      setProductForm(prev => ({
+        ...prev,
+        branch_id: branches[0].branch_id
+      }));
+    }
+  }, [admin, branches]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -139,7 +162,8 @@ function InventoryManagement() {
         fetchProducts(),
         fetchBranches(),
         fetchCategories(),
-        fetchInventorySummary()
+        fetchInventorySummary(),
+        fetchLowStockAlerts()
       ]);
     } catch (err) {
       setError('Failed to load data');
@@ -159,9 +183,16 @@ function InventoryManagement() {
       console.log('Fetching products with params:', params);
       const response = await api.get('/products', { params });
       console.log('Products response:', response.data);
-      setProducts(response.data.data?.data || []);
+      
+      if (response.data.success) {
+        setProducts(response.data.data?.data || []);
+      } else {
+        console.error('API returned error:', response.data.message);
+        setError('Failed to fetch products: ' + response.data.message);
+      }
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      setError('Failed to fetch products: ' + (err.message || 'Network error'));
     }
   };
 
@@ -195,9 +226,21 @@ function InventoryManagement() {
       console.log('Fetching branches...');
       const response = await api.get('/branches');
       console.log('Branches response:', response.data);
-      setBranches(response.data.data?.data || []);
+      const branchesData = response.data.data?.data || response.data.data || response.data || [];
+      console.log('Branches data:', branchesData);
+      
+      // Filter branches based on user role
+      let filteredBranches = branchesData;
+      if (admin?.branch_id) {
+        // For Branch Managers, only show their assigned branch
+        filteredBranches = branchesData.filter(branch => branch.branch_id === admin.branch_id);
+        console.log('Filtered branches for Branch Manager:', filteredBranches);
+      }
+      
+      setBranches(filteredBranches);
     } catch (err) {
       console.error('Failed to fetch branches:', err);
+      setBranches([]);
     }
   };
 
@@ -238,24 +281,83 @@ function InventoryManagement() {
     }
   };
 
+  const fetchLowStockAlerts = async () => {
+    try {
+      const params = {};
+      // Only add branch_id if admin has one (not for SuperAdmin)
+      if (admin?.branch_id) {
+        params.branch_id = admin.branch_id;
+      }
+      
+      const response = await api.get('/inventory/low-stock-alerts', { params });
+      setLowStockAlerts(response.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch low stock alerts:', err);
+      setLowStockAlerts([]);
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     if (newValue === 1) {
       fetchVariants();
     } else if (newValue === 2) {
       fetchInventoryLogs();
+    } else if (newValue === 3) {
+      fetchLowStockAlerts();
     }
   };
 
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (!productForm.name.trim()) {
+      setError('Product name is required');
+      return;
+    }
+    if (!productForm.category.trim()) {
+      setError('Category is required');
+      return;
+    }
+    if (!productForm.product_unit.trim()) {
+      setError('Product unit is required');
+      return;
+    }
+    if (!productForm.sale_unit.trim()) {
+      setError('Sale unit is required');
+      return;
+    }
+    if (!productForm.base_price || productForm.base_price <= 0) {
+      setError('Base price must be greater than 0');
+      return;
+    }
+    if (!productForm.low_stock_threshold || productForm.low_stock_threshold < 1) {
+      setError('Low stock threshold must be at least 1');
+      return;
+    }
+    if (!productForm.branch_id) {
+      setError('Branch is required');
+      return;
+    }
+
     setLoading(true);
+    setError(null); // Clear any previous errors
+    
     try {
+      // Prepare form data
+      const formData = {
+        ...productForm,
+        base_price: parseFloat(productForm.base_price),
+        low_stock_threshold: parseInt(productForm.low_stock_threshold),
+        branch_id: parseInt(productForm.branch_id)
+      };
+
       if (editingProduct) {
-        await api.put(`/products/${editingProduct.product_id}`, productForm);
+        await api.put(`/products/${editingProduct.product_id}`, formData);
         setSuccess('Product updated successfully');
       } else {
-        await api.post('/products', productForm);
+        await api.post('/products', formData);
         setSuccess('Product created successfully');
       }
       setProductDialog(false);
@@ -264,7 +366,12 @@ function InventoryManagement() {
       fetchProducts();
       fetchInventorySummary();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save product');
+      console.error('Product submission error:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.errors ? 
+                          Object.values(err.response.data.errors).flat().join(', ') :
+                          'Failed to save product';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -314,13 +421,14 @@ function InventoryManagement() {
     setProductForm({
       name: product.name,
       category: product.category,
-      description: product.description || '',
       product_unit: product.product_unit,
       sale_unit: product.sale_unit,
       base_price: product.base_price,
+      low_stock_threshold: product.low_stock_threshold || 10,
       branch_id: product.branch_id,
       is_active: product.is_active
     });
+    setError(null);
     setProductDialog(true);
   };
 
@@ -365,11 +473,11 @@ function InventoryManagement() {
     setProductForm({
       name: '',
       category: '',
-      description: '',
       product_unit: '',
       sale_unit: '',
       base_price: '',
-      branch_id: admin?.branch_id || '',
+      low_stock_threshold: 10,
+      branch_id: admin?.branch_id || (branches.length > 0 ? branches[0].branch_id : ''),
       is_active: true
     });
   };
@@ -410,22 +518,54 @@ function InventoryManagement() {
     }
   };
 
+  const getProductStockInfo = (product) => {
+    // Get current stock from the product data (should be included in API response)
+    const currentStock = product.current_stock || 0;
+    const lowStockThreshold = product.low_stock_threshold || 10;
+    
+    let stockStatus = 'In Stock';
+    let stockColor = 'success';
+    
+    if (currentStock <= 0) {
+      stockStatus = 'Out of Stock';
+      stockColor = 'error';
+    } else if (currentStock <= lowStockThreshold) {
+      stockStatus = 'Low Stock';
+      stockColor = 'warning';
+    }
+    
+    return { currentStock, stockStatus, stockColor };
+  };
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ color: '#8B4513', fontWeight: 'bold' }}>
-          Inventory Management
-        </Typography>
+    <Container maxWidth="xl" sx={{ mt: 6, mb: 6, px: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 5 }}>
+        <Box>
+          <Typography variant="h3" sx={{ color: '#8B4513', fontWeight: 'bold', mb: 2 }}>
+            Inventory Management
+          </Typography>
+          {admin?.branch_id && branches.length > 0 && (
+            <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+              Managing: {branches.find(b => b.branch_id === admin.branch_id)?.name || 'Your Branch'}
+            </Typography>
+          )}
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => {
             resetProductForm();
             setEditingProduct(null);
+            setError(null);
             setProductDialog(true);
           }}
+          size="large"
           sx={{
             bgcolor: '#8B4513',
+            fontSize: '1.2rem',
+            px: 4,
+            py: 2,
+            height: '56px',
             '&:hover': { bgcolor: '#A0522D' }
           }}
         >
@@ -434,17 +574,17 @@ function InventoryManagement() {
       </Box>
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={4} sx={{ mb: 5 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ProductIcon sx={{ color: '#8B4513', mr: 2 }} />
+          <Card sx={{ height: '140px', borderRadius: 3 }}>
+            <CardContent sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <ProductIcon sx={{ color: '#8B4513', mr: 3, fontSize: '2.5rem' }} />
                 <Box>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="textSecondary" gutterBottom sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
                     Total Products
                   </Typography>
-                  <Typography variant="h5">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     {stats?.totalProducts || 0}
                   </Typography>
                 </Box>
@@ -453,15 +593,15 @@ function InventoryManagement() {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <WarningIcon sx={{ color: '#FF9800', mr: 2 }} />
+          <Card sx={{ height: '140px', borderRadius: 3 }}>
+            <CardContent sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <WarningIcon sx={{ color: '#FF9800', mr: 3, fontSize: '2.5rem' }} />
                 <Box>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="textSecondary" gutterBottom sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
                     Low Stock
                   </Typography>
-                  <Typography variant="h5">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     {stats?.lowStockProducts || 0}
                   </Typography>
                 </Box>
@@ -470,15 +610,15 @@ function InventoryManagement() {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <WarningIcon sx={{ color: '#F44336', mr: 2 }} />
+          <Card sx={{ height: '140px', borderRadius: 3 }}>
+            <CardContent sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <WarningIcon sx={{ color: '#F44336', mr: 3, fontSize: '2.5rem' }} />
                 <Box>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="textSecondary" gutterBottom sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
                     Out of Stock
                   </Typography>
-                  <Typography variant="h5">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     {stats?.outOfStockProducts || 0}
                   </Typography>
                 </Box>
@@ -487,15 +627,15 @@ function InventoryManagement() {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUpIcon sx={{ color: '#4CAF50', mr: 2 }} />
+          <Card sx={{ height: '140px', borderRadius: 3 }}>
+            <CardContent sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <TrendingUpIcon sx={{ color: '#4CAF50', mr: 3, fontSize: '2.5rem' }} />
                 <Box>
-                  <Typography color="textSecondary" gutterBottom>
+                  <Typography color="textSecondary" gutterBottom sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
                     Total Value
                   </Typography>
-                  <Typography variant="h5">
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                     ₱{(stats?.totalValue || 0).toFixed(2)}
                   </Typography>
                 </Box>
@@ -506,12 +646,32 @@ function InventoryManagement() {
       </Grid>
 
       {/* Tabs */}
-      <Paper sx={{ width: '100%' }}>
+      <Paper sx={{ width: '100%', borderRadius: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="inventory tabs">
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            aria-label="inventory tabs"
+            sx={{
+              '& .MuiTab-root': {
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                py: 2,
+                px: 3,
+                minHeight: '64px',
+              }
+            }}
+          >
             <Tab label="Products" />
             <Tab label="Product Variants" />
             <Tab label="Inventory Logs" />
+            <Tab 
+              label={`Low Stock Alerts ${lowStockAlerts.length > 0 ? `(${lowStockAlerts.length})` : ''}`}
+              sx={{ 
+                color: lowStockAlerts.length > 0 ? '#f44336' : 'inherit',
+                fontWeight: lowStockAlerts.length > 0 ? 'bold' : 'normal'
+              }}
+            />
           </Tabs>
         </Box>
 
@@ -521,45 +681,65 @@ function InventoryManagement() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Base Price</TableCell>
-                  <TableCell>Unit</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Name</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Category</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Base Price</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Unit</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Current Stock</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Stock Status</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Status</TableCell>
+                  <TableCell sx={{ fontSize: '1.1rem', fontWeight: 600, py: 2 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.product_id}>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>₱{product.base_price}</TableCell>
-                    <TableCell>{product.sale_unit}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={product.is_active ? 'Active' : 'Inactive'}
-                        color={product.is_active ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteProduct(product.product_id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {products.map((product) => {
+                  const stockInfo = getProductStockInfo(product);
+                  return (
+                    <TableRow key={product.product_id} sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}>
+                      <TableCell sx={{ fontSize: '1.1rem', py: 2 }}>{product.name}</TableCell>
+                      <TableCell sx={{ fontSize: '1.1rem', py: 2 }}>{product.category}</TableCell>
+                      <TableCell sx={{ fontSize: '1.1rem', py: 2 }}>₱{product.base_price}</TableCell>
+                      <TableCell sx={{ fontSize: '1.1rem', py: 2 }}>{product.sale_unit}</TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                          {stockInfo.currentStock}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip
+                          label={stockInfo.stockStatus}
+                          color={stockInfo.stockColor}
+                          size="medium"
+                          sx={{ fontSize: '1rem', fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip
+                          label={product.is_active ? 'Active' : 'Inactive'}
+                          color={product.is_active ? 'success' : 'default'}
+                          size="medium"
+                          sx={{ fontSize: '1rem', fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <IconButton
+                          size="large"
+                          onClick={() => handleEditProduct(product)}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon fontSize="large" />
+                        </IconButton>
+                        <IconButton
+                          size="large"
+                          onClick={() => handleDeleteProduct(product.product_id)}
+                          color="error"
+                        >
+                          <DeleteIcon fontSize="large" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -675,16 +855,124 @@ function InventoryManagement() {
             </Table>
           </TableContainer>
         </TabPanel>
+
+        {/* Low Stock Alerts Tab */}
+        <TabPanel value={tabValue} index={3}>
+          {lowStockAlerts.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                No low stock alerts! All products are well stocked.
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product Name</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Current Stock</TableCell>
+                    <TableCell>Low Stock Threshold</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Urgency</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lowStockAlerts.map((alert) => (
+                    <TableRow key={alert.product_id}>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          {alert.product_name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{alert.category}</TableCell>
+                      <TableCell>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            color: alert.is_out_of_stock ? 'error.main' : 'warning.main'
+                          }}
+                        >
+                          {alert.current_stock}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{alert.low_stock_threshold}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={alert.stock_status}
+                          color={alert.stock_color}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={alert.urgency === 'critical' ? 'Critical' : 'Warning'}
+                          color={alert.urgency === 'critical' ? 'error' : 'warning'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={<AddIcon />}
+                          onClick={() => {
+                            resetInventoryForm();
+                            setInventoryForm(prev => ({
+                              ...prev,
+                              product_id: alert.product_id,
+                              change_type: 'restock'
+                            }));
+                            setInventoryDialog(true);
+                          }}
+                          sx={{
+                            bgcolor: '#8B4513',
+                            '&:hover': { bgcolor: '#A0522D' }
+                          }}
+                        >
+                          Restock
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
       </Paper>
 
       {/* Product Dialog */}
-      <Dialog open={productDialog} onClose={() => setProductDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
+      <Dialog 
+        open={productDialog} 
+        onClose={() => {
+          setProductDialog(false);
+          setError(null);
+        }} 
+        maxWidth="lg" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            minHeight: '80vh',
+            borderRadius: 3,
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 3, fontSize: '1.8rem', fontWeight: 'bold' }}>
           {editingProduct ? 'Edit Product' : 'Add New Product'}
         </DialogTitle>
         <form onSubmit={handleProductSubmit}>
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+          <DialogContent sx={{ px: 4, py: 2 }}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                {error}
+              </Alert>
+            )}
+            <Grid container spacing={4} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -692,6 +980,17 @@ function InventoryManagement() {
                   value={productForm.name}
                   onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                   required
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -701,16 +1000,17 @@ function InventoryManagement() {
                   value={productForm.category}
                   onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                   required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={3}
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -720,6 +1020,17 @@ function InventoryManagement() {
                   value={productForm.product_unit}
                   onChange={(e) => setProductForm({ ...productForm, product_unit: e.target.value })}
                   required
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -729,6 +1040,17 @@ function InventoryManagement() {
                   value={productForm.sale_unit}
                   onChange={(e) => setProductForm({ ...productForm, sale_unit: e.target.value })}
                   required
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -740,22 +1062,82 @@ function InventoryManagement() {
                   value={productForm.base_price}
                   onChange={(e) => setProductForm({ ...productForm, base_price: e.target.value })}
                   required
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Branch</InputLabel>
+                <TextField
+                  fullWidth
+                  label="Low Stock Threshold"
+                  type="number"
+                  value={productForm.low_stock_threshold}
+                  onChange={(e) => setProductForm({ ...productForm, low_stock_threshold: e.target.value })}
+                  required
+                  helperText="Alert when stock falls below this number"
+                  size="large"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.2rem',
+                      padding: '16px 14px',
+                      height: '64px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '1.1rem',
+                    },
+                    '& .MuiFormHelperText-root': {
+                      fontSize: '1rem',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="large">
+                  <InputLabel sx={{ fontSize: '1.1rem' }}>Branch *</InputLabel>
                   <Select
                     value={productForm.branch_id}
                     onChange={(e) => setProductForm({ ...productForm, branch_id: e.target.value })}
                     required
+                    displayEmpty
+                    disabled={admin?.branch_id ? true : false} // Disable for Branch Managers
+                    sx={{
+                      fontSize: '1.2rem',
+                      height: '64px',
+                      '& .MuiSelect-select': {
+                        padding: '16px 14px',
+                      },
+                    }}
+                    renderValue={(selected) => {
+                      if (!selected) {
+                        return <em style={{ color: '#999', fontSize: '1.2rem' }}>Select a branch</em>;
+                      }
+                      const branch = branches.find(b => b.branch_id === selected);
+                      return branch ? branch.name : 'Unknown Branch';
+                    }}
                   >
+                    <MenuItem value="" disabled sx={{ fontSize: '1.1rem' }}>
+                      <em>Select a branch</em>
+                    </MenuItem>
                     {branches.map((branch) => (
-                      <MenuItem key={branch.branch_id} value={branch.branch_id}>
+                      <MenuItem key={branch.branch_id} value={branch.branch_id} sx={{ fontSize: '1.1rem' }}>
                         {branch.name}
                       </MenuItem>
                     ))}
                   </Select>
+                  {admin?.branch_id && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1rem' }}>
+                      Branch is automatically set to your assigned branch
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
@@ -764,17 +1146,51 @@ function InventoryManagement() {
                     <Switch
                       checked={productForm.is_active}
                       onChange={(e) => setProductForm({ ...productForm, is_active: e.target.checked })}
+                      size="large"
                     />
                   }
-                  label="Active"
+                  label={<Typography sx={{ fontSize: '1.2rem' }}>Active</Typography>}
                 />
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setProductDialog(false)}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={loading}>
-              {loading ? <CircularProgress size={24} /> : 'Save'}
+          <DialogActions sx={{ p: 4, pt: 2 }}>
+            <Button 
+              onClick={() => setProductDialog(false)} 
+              size="large"
+              sx={{ 
+                fontSize: '1.2rem',
+                px: 4,
+                py: 1.5,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: 'primary.dark',
+                  backgroundColor: 'rgba(139, 69, 19, 0.05)',
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              disabled={loading} 
+              size="large"
+              sx={{ 
+                fontSize: '1.2rem',
+                px: 4,
+                py: 1.5,
+                backgroundColor: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+                '&:disabled': {
+                  backgroundColor: 'rgba(139, 69, 19, 0.3)',
+                }
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Save'}
             </Button>
           </DialogActions>
         </form>

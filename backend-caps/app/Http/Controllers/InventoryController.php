@@ -171,14 +171,22 @@ class InventoryController extends Controller
 
             $inventoryStatus = $products->map(function ($product) use ($branchId) {
                 $currentStock = $product->getCurrentStock($branchId);
+                $stockStatus = $product->getStockStatusWithColor($branchId);
                 
                 return [
                     'product_id' => $product->product_id,
                     'product_name' => $product->name,
                     'category' => $product->category,
                     'current_stock' => $currentStock,
+                    'low_stock_threshold' => $product->low_stock_threshold,
                     'product_unit' => $product->product_unit,
-                    'base_price' => $product->base_price
+                    'sale_unit' => $product->sale_unit,
+                    'base_price' => $product->base_price,
+                    'stock_status' => $stockStatus['status'],
+                    'stock_color' => $stockStatus['color'],
+                    'is_low_stock' => $product->isLowStock($branchId),
+                    'is_out_of_stock' => $product->isOutOfStock($branchId),
+                    'needs_restock' => $product->isLowStock($branchId) || $product->isOutOfStock($branchId)
                 ];
             });
 
@@ -226,7 +234,7 @@ class InventoryController extends Controller
 
                 if ($currentStock <= 0) {
                     $outOfStockProducts++;
-                } elseif ($currentStock <= 10) { // Assuming 10 is low stock threshold
+                } elseif ($currentStock <= $product->low_stock_threshold) {
                     $lowStockProducts++;
                 }
             }
@@ -271,6 +279,143 @@ class InventoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch change types',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get low stock alerts for a specific branch
+     */
+    public function getLowStockAlerts(Request $request)
+    {
+        try {
+            $branchId = $request->get('branch_id');
+            
+            if (!$branchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch ID is required'
+                ], 400);
+            }
+
+            $products = Product::where('branch_id', $branchId)
+                ->where('is_active', true)
+                ->get();
+
+            $lowStockProducts = $products->filter(function ($product) use ($branchId) {
+                return $product->isLowStock($branchId) || $product->isOutOfStock($branchId);
+            })->map(function ($product) use ($branchId) {
+                $currentStock = $product->getCurrentStock($branchId);
+                $stockStatus = $product->getStockStatusWithColor($branchId);
+                
+                return [
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->name,
+                    'category' => $product->category,
+                    'current_stock' => $currentStock,
+                    'low_stock_threshold' => $product->low_stock_threshold,
+                    'product_unit' => $product->product_unit,
+                    'sale_unit' => $product->sale_unit,
+                    'base_price' => $product->base_price,
+                    'stock_status' => $stockStatus['status'],
+                    'stock_color' => $stockStatus['color'],
+                    'is_low_stock' => $product->isLowStock($branchId),
+                    'is_out_of_stock' => $product->isOutOfStock($branchId),
+                    'urgency' => $product->isOutOfStock($branchId) ? 'critical' : 'warning'
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $lowStockProducts,
+                'count' => $lowStockProducts->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch low stock alerts',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detailed inventory report for a specific branch
+     */
+    public function getBranchInventoryReport(Request $request)
+    {
+        try {
+            $branchId = $request->get('branch_id');
+            
+            if (!$branchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch ID is required'
+                ], 400);
+            }
+
+            $products = Product::where('branch_id', $branchId)
+                ->where('is_active', true)
+                ->get();
+
+            $inventoryReport = $products->map(function ($product) use ($branchId) {
+                $currentStock = $product->getCurrentStock($branchId);
+                $stockStatus = $product->getStockStatusWithColor($branchId);
+                
+                // Calculate stock value
+                $stockValue = $currentStock * $product->base_price;
+                
+                // Get recent inventory activity (last 30 days)
+                $recentActivity = $product->inventoryLogs()
+                    ->where('branch_id', $branchId)
+                    ->where('created_at', '>=', now()->subDays(30))
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get(['change_type', 'quantity', 'created_at', 'notes']);
+
+                return [
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->name,
+                    'category' => $product->category,
+                    'current_stock' => $currentStock,
+                    'low_stock_threshold' => $product->low_stock_threshold,
+                    'product_unit' => $product->product_unit,
+                    'sale_unit' => $product->sale_unit,
+                    'base_price' => $product->base_price,
+                    'stock_value' => $stockValue,
+                    'stock_status' => $stockStatus['status'],
+                    'stock_color' => $stockStatus['color'],
+                    'is_low_stock' => $product->isLowStock($branchId),
+                    'is_out_of_stock' => $product->isOutOfStock($branchId),
+                    'needs_restock' => $product->isLowStock($branchId) || $product->isOutOfStock($branchId),
+                    'recent_activity' => $recentActivity
+                ];
+            });
+
+            // Calculate summary statistics
+            $totalProducts = $inventoryReport->count();
+            $lowStockCount = $inventoryReport->where('is_low_stock', true)->count();
+            $outOfStockCount = $inventoryReport->where('is_out_of_stock', true)->count();
+            $totalValue = $inventoryReport->sum('stock_value');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'products' => $inventoryReport,
+                    'summary' => [
+                        'total_products' => $totalProducts,
+                        'low_stock_count' => $lowStockCount,
+                        'out_of_stock_count' => $outOfStockCount,
+                        'total_inventory_value' => $totalValue,
+                        'branch_id' => $branchId
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch inventory report',
                 'error' => $e->getMessage()
             ], 500);
         }

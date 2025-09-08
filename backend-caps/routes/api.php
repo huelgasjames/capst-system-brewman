@@ -88,6 +88,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('admin.tok
 Route::get('/me', [AuthController::class, 'me'])->middleware('admin.token');
 Route::get('/check-auth', [AuthController::class, 'checkAuth'])->middleware('admin.token');
 
+// Branch Manager Authentication Routes
+Route::post('/branch-manager/login', [AuthController::class, 'branchManagerLogin']);
+Route::post('/branch-manager/logout', [AuthController::class, 'branchManagerLogout'])->middleware('branchmanager.token');
+Route::get('/branch-manager/me', [AuthController::class, 'branchManagerMe'])->middleware('branchmanager.token');
+Route::get('/branch-manager/check-auth', [AuthController::class, 'checkBranchManagerAuth'])->middleware('branchmanager.token');
+
 // Protected Routes - Require Admin Authentication
 Route::middleware(['admin.token'])->group(function () {
     // User Management CRUD
@@ -135,5 +141,7 @@ Route::middleware(['admin.token'])->group(function () {
     Route::get('/inventory/status', [InventoryController::class, 'getInventoryStatus']); // Get inventory status
     Route::get('/inventory/summary', [InventoryController::class, 'getInventorySummary']); // Get inventory summary
     Route::get('/inventory/change-types', [InventoryController::class, 'getChangeTypes']); // Get change types
+    Route::get('/inventory/low-stock-alerts', [InventoryController::class, 'getLowStockAlerts']); // Get low stock alerts
+    Route::get('/inventory/branch-report', [InventoryController::class, 'getBranchInventoryReport']); // Get branch inventory report
 });
 
