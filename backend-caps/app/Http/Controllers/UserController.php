@@ -10,7 +10,10 @@ class UserController extends Controller
     // Get all users
     public function index()
     {
-        $users = User::select('user_id as id', 'name', 'email', 'role', 'branch_id', 'created_at')
+        $users = User::select('user_id as id', 'name', 'email', 'role', 'branch_id', 'created_at', 'updated_at')
+            ->with(['branch' => function($query) {
+                $query->select('branch_id', 'branch_name', 'location', 'status');
+            }])
             ->orderBy('user_id')
             ->get();
 
@@ -31,6 +34,11 @@ class UserController extends Controller
         $validated['password'] = bcrypt($validated['password']); // Hash password
 
         $user = User::create($validated);
+        
+        // Load user with branch relationship
+        $user = $user->fresh(['branch' => function($query) {
+            $query->select('branch_id', 'branch_name', 'location', 'status');
+        }]);
 
         return response()->json([
             'id' => $user->user_id,
@@ -39,13 +47,19 @@ class UserController extends Controller
             'role' => $user->role,
             'branch_id' => $user->branch_id,
             'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+            'branch' => $user->branch,
         ], 201);
     }
 
     // Show a single user
     public function show($id)
     {
-        $user = User::where('user_id', $id)->first();
+        $user = User::where('user_id', $id)
+            ->with(['branch' => function($query) {
+                $query->select('branch_id', 'branch_name', 'location', 'status');
+            }])
+            ->first();
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -77,6 +91,11 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+        
+        // Reload user with branch relationship
+        $user = $user->fresh(['branch' => function($query) {
+            $query->select('branch_id', 'branch_name', 'location', 'status');
+        }]);
 
         return response()->json([
             'id' => $user->user_id,
@@ -85,6 +104,8 @@ class UserController extends Controller
             'role' => $user->role,
             'branch_id' => $user->branch_id,
             'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+            'branch' => $user->branch,
         ], 200);
     }
 

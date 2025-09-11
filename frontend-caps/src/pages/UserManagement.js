@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -14,50 +14,37 @@ import {
   IconButton,
   Chip,
   Avatar,
-  Divider,
   Alert,
   Snackbar,
   CircularProgress,
-  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Tooltip,
-  Fab,
-  Switch,
-  FormControlLabel,
-  InputAdornment,
-  OutlinedInput,
-  ListItemText,
-  Checkbox,
+  Paper,
+  TablePagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  Email as EmailIcon,
   Business as BusinessIcon,
   Security as SecurityIcon,
   Visibility as ViewIcon,
   VisibilityOff as ViewOffIcon,
   Assignment as AssignmentIcon,
-  RemoveCircle as RemoveIcon,
-  Refresh as RefreshIcon,
   SupervisorAccount as BranchManagerIcon,
   PointOfSale as CashierIcon,
   LocalCafe as BaristaIcon,
   Groups as StaffIcon,
-  TrendingUp as TrendingUpIcon,
-  CheckCircle as CheckCircleIcon,
-  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -70,7 +57,6 @@ function UserManagement() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openBranchDialog, setOpenBranchDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -97,15 +83,23 @@ function UserManagement() {
     message: '',
     severity: 'success',
   });
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
-  useEffect(() => {
-    fetchUsers();
-    fetchBranches();
-  }, []);
+  const testBackendConnection = async () => {
+    try {
+      console.log('Testing backend connection...');
+      const response = await fetch(`${API_BASE_URL}/test`);
+      const data = await response.json();
+      console.log('Backend test response:', data);
+    } catch (error) {
+      console.error('Backend connection test failed:', error);
+    }
+  };
 
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/branches`, {
         headers: getAuthHeaders(),
@@ -113,11 +107,26 @@ function UserManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        // Ensure branches is always an array, handle different response structures
-        const branchesArray = Array.isArray(data) ? data : 
-                             Array.isArray(data.data) ? data.data : 
+        console.log('Raw branches data:', data); // Debug log
+        
+        // The API returns branches in a nested structure with success/data
+        const branchesArray = data.success && Array.isArray(data.data) ? data.data : 
+                             Array.isArray(data) ? data : 
                              Array.isArray(data.branches) ? data.branches : [];
-        setBranches(branchesArray);
+        
+        // Transform the data to ensure consistent structure
+        const transformedBranches = branchesArray.map(branch => ({
+          id: branch.branch_id || branch.id,
+          branch_id: branch.branch_id || branch.id,
+          name: branch.branch_name || branch.name,
+          branch_name: branch.branch_name || branch.name,
+          location: branch.location,
+          status: branch.status,
+          users: branch.users || []
+        }));
+        
+        console.log('Transformed branches:', transformedBranches); // Debug log
+        setBranches(transformedBranches);
       } else {
         console.error('Failed to fetch branches');
         setBranches([]); // Set empty array on error
@@ -126,24 +135,54 @@ function UserManagement() {
       console.error('Error fetching branches:', error);
       setBranches([]); // Set empty array on error
     }
-  };
+  }, [getAuthHeaders]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Fetching users from:', `${API_BASE_URL}/users`);
+      console.log('Auth headers:', getAuthHeaders());
+      
       const response = await fetch(`${API_BASE_URL}/users`, {
         headers: getAuthHeaders(),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (response.ok) {
         const data = await response.json();
-        // Ensure users is always an array, handle different response structures
-        const usersArray = Array.isArray(data) ? data : 
-                          Array.isArray(data.data) ? data.data : 
-                          Array.isArray(data.users) ? data.users : [];
-        setUsers(usersArray);
+        console.log('Raw users data:', data); // Debug log
+        
+        // The API returns users directly as an array
+        const usersArray = Array.isArray(data) ? data : [];
+        console.log('Users array length:', usersArray.length);
+        
+        // Transform the data to ensure consistent structure
+        const transformedUsers = usersArray.map(user => ({
+          id: user.id || user.user_id, // Handle both id and user_id
+          user_id: user.user_id || user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          branch_id: user.branch_id,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          // Add branch information if available
+          branch: user.branch ? {
+            id: user.branch.branch_id,
+            name: user.branch.branch_name,
+            location: user.branch.location,
+            status: user.branch.status
+          } : null
+        }));
+        
+        console.log('Transformed users:', transformedUsers); // Debug log
+        setUsers(transformedUsers);
       } else {
-        console.error('Failed to fetch users');
+        const errorText = await response.text();
+        console.error('Failed to fetch users - Status:', response.status);
+        console.error('Error response:', errorText);
         setUsers([]); // Set empty array on error
       }
     } catch (error) {
@@ -152,7 +191,14 @@ function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    // Test backend connection first
+    testBackendConnection();
+    fetchUsers();
+    fetchBranches();
+  }, [fetchUsers, fetchBranches]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -411,40 +457,26 @@ function UserManagement() {
       'cashier': 'Cashier',
       'barista': 'Barista',
       'staff': 'Staff',
-      // Current format
+      // Current format (proper case)
       'Branch Manager': 'Branch Manager',
       'Cashier': 'Cashier',
       'Barista': 'Barista',
       'Staff': 'Staff',
+      // Handle lowercase variations from database
+      'branch manager': 'Branch Manager',
     };
     return roleMap[role] || role;
   };
 
-  // Calculate role counts with memoization for better performance
-  const roleCounts = useMemo(() => {
-    if (!Array.isArray(users)) return { branchManager: 0, cashier: 0, barista: 0, staff: 0 };
-    
-    return users.reduce((counts, user) => {
-      const role = getRoleDisplayName(user.role);
-      switch (role) {
-        case 'Branch Manager':
-          counts.branchManager++;
-          break;
-        case 'Cashier':
-          counts.cashier++;
-          break;
-        case 'Barista':
-          counts.barista++;
-          break;
-        case 'Staff':
-          counts.staff++;
-          break;
-        default:
-          break;
-      }
-      return counts;
-    }, { branchManager: 0, cashier: 0, barista: 0, staff: 0 });
-  }, [users]);
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   
   // Check if user has permission to manage users
   if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
@@ -466,11 +498,19 @@ function UserManagement() {
   const hasAvailableBranches = branches && branches.length > 0;
   const canAddUsers = hasAvailableRoles && hasAvailableBranches;
 
-  // Calculate user statistics by role
-  const branchManagerCount = users.filter(user => user.role === 'Branch Manager').length;
-  const cashierCount = users.filter(user => user.role === 'Cashier').length;
-  const baristaCount = users.filter(user => user.role === 'Barista').length;
-  const staffCount = users.filter(user => user.role === 'Staff').length;
+  // Calculate user statistics by role (case-insensitive)
+  const branchManagerCount = users.filter(user => 
+    getRoleDisplayName(user.role) === 'Branch Manager'
+  ).length;
+  const cashierCount = users.filter(user => 
+    getRoleDisplayName(user.role) === 'Cashier'
+  ).length;
+  const baristaCount = users.filter(user => 
+    getRoleDisplayName(user.role) === 'Barista'
+  ).length;
+  const staffCount = users.filter(user => 
+    getRoleDisplayName(user.role) === 'Staff'
+  ).length;
 
   if (loading) {
     return (
@@ -808,227 +848,194 @@ function UserManagement() {
           </Grid>
         </Box>
 
-      {/* Users Grid */}
-      <Grid container spacing={3}>
+      {/* Users Table */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 3 }}>
+          Users List
+        </Typography>
+        
         {Array.isArray(users) && users.length > 0 ? (
-          users.map((user) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={user.id || user.user_id}>
-              <Card 
-                elevation={0}
-                sx={{ 
-                  height: '250px',
-                  minHeight: '250px',
-                  maxHeight: '250px',
-                  width: '250px',
-                  minWidth: '250px',
-                  maxWidth: '250px',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  background: 'linear-gradient(145deg, #ffffff 0%, #fafafa 100%)',
-                  mx: 'auto',
-                  overflow: 'hidden',
-                  '&:hover': {
-                    transform: 'translateY(-8px) scale(1.02)',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08)',
-                    border: '1px solid rgba(139, 69, 19, 0.2)',
-                  }
-                }}
-                onClick={() => handleEdit(user)}
-              >
-                <CardContent sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  justifyContent: 'space-between',
-                  p: 2.5,
-                  position: 'relative',
-                  boxSizing: 'border-box',
-                  overflow: 'hidden'
-                }}>
-                  {/* Top Section - Avatar and Name */}
-                  <Box sx={{ 
-                    textAlign: 'center', 
-                    mb: 1.5,
-                    minHeight: '90px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}>
-                    <Avatar 
+          <Card elevation={0} sx={{ 
+            borderRadius: 3,
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            overflow: 'hidden'
+          }}>
+            <TableContainer>
+              <Table sx={{ minWidth: 650 }} aria-label="users table">
+                <TableHead sx={{ bgcolor: 'rgba(139, 69, 19, 0.05)' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}>
+                      User
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}>
+                      Email
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}>
+                      Role
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}>
+                      Branch
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}>
+                      Created
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main', textAlign: 'center' }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((user) => (
+                    <TableRow
+                      key={user.id || user.user_id}
                       sx={{ 
-                        background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}CC 100%)`,
-                        width: 40,
-                        height: 40,
-                        mx: 'auto',
-                        mb: 0.8,
-                        fontSize: '1rem',
-                        boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
-                        border: '2px solid rgba(255, 255, 255, 0.8)'
+                        '&:last-child td, &:last-child th': { border: 0 },
+                        '&:hover': { bgcolor: 'rgba(139, 69, 19, 0.02)' },
+                        cursor: 'pointer'
                       }}
+                      onClick={() => handleEdit(user)}
                     >
-                      <PersonIcon fontSize="small" />
-                    </Avatar>
-                    <Typography variant="h6" sx={{ 
-                      fontWeight: 600,
-                      fontSize: '0.7rem',
-                      lineHeight: 1.1,
-                      mb: 0.2,
-                      color: '#2c3e50',
-                      letterSpacing: '0.05px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '100%',
-                      px: 1
-                    }}>
-                      {user.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{
-                      fontSize: '0.6rem',
-                      lineHeight: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      opacity: 0.7,
-                      maxWidth: '100%',
-                      px: 1
-                    }}>
-                      {user.email}
-                    </Typography>
-                  </Box>
-
-                  {/* Middle Section - Role and Branch */}
-                  <Box sx={{ 
-                    mb: 1.5, 
-                    textAlign: 'center',
-                    minHeight: '50px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}>
-                    <Chip
-                      label={getRoleDisplayName(user.role)}
-                      size="small"
-                      sx={{
-                        background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}DD 100%)`,
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: '0.6rem',
-                        mb: 0.3,
-                        width: '100%',
-                        height: '20px',
-                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                        border: 'none',
-                        '& .MuiChip-label': {
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '100%',
-                          padding: '0 8px'
-                        }
-                      }}
-                    />
-                    {user.branch && (
-                      <Chip
-                        label={user.branch.name}
-                        size="small"
-                        variant="outlined"
-                        sx={{ 
-                          fontSize: '0.55rem',
-                          width: '100%',
-                          height: '16px',
-                          borderColor: 'rgba(139, 69, 19, 0.3)',
-                          color: 'rgba(139, 69, 19, 0.8)',
-                          fontWeight: 500,
-                          '& .MuiChip-label': {
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '100%',
-                            padding: '0 6px'
-                          }
-                        }}
-                      />
-                    )}
-                  </Box>
-
-                  {/* Bottom Section - Action Buttons */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    gap: 1, 
-                    justifyContent: 'center',
-                    mt: 'auto',
-                    minHeight: '50px',
-                    alignItems: 'center'
-                  }}>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(user);
-                      }}
-                      sx={{ 
-                        color: '#1976d2',
-                        bgcolor: 'rgba(25, 118, 210, 0.08)',
-                        border: '1px solid rgba(25, 118, 210, 0.2)',
-                        width: 32,
-                        height: 32,
-                        '&:hover': {
-                          bgcolor: '#1976d2',
-                          color: 'white',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
-                          border: '1px solid #1976d2'
-                        }
-                      }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(user.id || user.user_id);
-                      }}
-                      sx={{ 
-                        color: '#d32f2f',
-                        bgcolor: 'rgba(211, 47, 47, 0.08)',
-                        border: '1px solid rgba(211, 47, 47, 0.2)',
-                        width: 32,
-                        height: 32,
-                        '&:hover': {
-                          bgcolor: '#d32f2f',
-                          color: 'white',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)',
-                          border: '1px solid #d32f2f'
-                        }
-                      }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))
+                      <TableCell component="th" scope="row">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar 
+                            sx={{ 
+                              background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}CC 100%)`,
+                              width: 40,
+                              height: 40,
+                              fontSize: '1rem',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                            }}
+                          >
+                            <PersonIcon fontSize="small" />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                              {user.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              ID: {user.id || user.user_id}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                          {user.email}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getRoleDisplayName(user.role)}
+                          size="small"
+                          sx={{
+                            background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}DD 100%)`,
+                            color: 'white',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {user.branch_id ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <BusinessIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                              {user.branch ? user.branch.name : (() => {
+                                const branch = branches.find(b => (b.id || b.branch_id) === user.branch_id);
+                                return branch ? (branch.name || branch.branch_name) : `Branch ${user.branch_id}`;
+                              })()}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No branch assigned
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(user);
+                            }}
+                            sx={{ 
+                              color: '#1976d2',
+                              bgcolor: 'rgba(25, 118, 210, 0.08)',
+                              border: '1px solid rgba(25, 118, 210, 0.2)',
+                              '&:hover': {
+                                bgcolor: '#1976d2',
+                                color: 'white',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                              }
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(user.id || user.user_id);
+                            }}
+                            sx={{ 
+                              color: '#d32f2f',
+                              bgcolor: 'rgba(211, 47, 47, 0.08)',
+                              border: '1px solid rgba(211, 47, 47, 0.2)',
+                              '&:hover': {
+                                bgcolor: '#d32f2f',
+                                color: 'white',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)',
+                              }
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={users.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+                bgcolor: 'rgba(139, 69, 19, 0.02)'
+              }}
+            />
+          </Card>
         ) : (
-          <Grid item xs={12}>
-            <Card sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                {loading ? 'Loading users...' : 'No users found'}
+          <Card sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+              {loading ? 'Loading users...' : 'No users found'}
+            </Typography>
+            {!loading && (
+              <Typography variant="body2" color="text.secondary">
+                Start by adding your first user using the "Add User" button above.
               </Typography>
-              {!loading && (
-                <Typography variant="body2" color="text.secondary">
-                  Start by adding your first user using the "Add User" button above.
-                </Typography>
-              )}
-            </Card>
-          </Grid>
+            )}
+          </Card>
         )}
-      </Grid>
+      </Box>
 
       {/* Add/Edit User Dialog */}
       <Dialog 
@@ -1555,7 +1562,7 @@ function UserManagement() {
                               if (!selected) {
                                 return <em style={{ color: '#999' }}>Select branch</em>;
                               }
-                              const branch = branches.find(b => (b.id || b.branch_id) == selected);
+                              const branch = branches.find(b => (b.id || b.branch_id) === selected);
                               return branch ? (branch.name || branch.branch_name) : 'Unknown Branch';
                             }}
                           >
