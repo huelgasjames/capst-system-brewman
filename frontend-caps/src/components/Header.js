@@ -18,11 +18,12 @@ import {
   AdminPanelSettings as AdminIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import { useNavigate } from 'react-router-dom';
+import BMLogo from '../BM-Logo.png';
 
 const Header = () => {
-  const { admin, logout } = useAuth();
+  const { user, logout } = useUnifiedAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -45,17 +46,22 @@ const Header = () => {
       'Super Admin': '#d32f2f',
       'Owner': '#1976d2',
       'Admin': '#388e3c',
+      'Branch Manager': '#1976d2',
+      'Staff': '#388e3c',
+      'Cashier': '#f57c00',
+      'Barista': '#9c27b0',
+      'Server': '#1976d2',
     };
     return colors[role] || '#666';
   };
 
   const getRoleIcon = (role) => {
-    if (role === 'Super Admin') return <AdminIcon />;
-    if (role === 'Owner') return <AdminIcon />;
+    if (role === 'Super Admin' || role === 'Owner' || role === 'Admin') return <AdminIcon />;
+    if (role === 'Branch Manager') return <PersonIcon />;
     return <PersonIcon />;
   };
 
-  if (!admin) return null;
+  if (!user) return null;
 
   return (
     <AppBar 
@@ -68,7 +74,17 @@ const Header = () => {
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         {/* Logo and Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            component="img"
+            src={BMLogo}
+            alt="BrewManager Logo"
+            sx={{
+              height: 40,
+              width: 'auto',
+              filter: 'brightness(0) invert(1)', // Makes logo white
+            }}
+          />
           <Typography 
             variant="h5" 
             component="h1" 
@@ -78,7 +94,7 @@ const Header = () => {
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
           >
-            Brew Manager Comprehensive Web Based Management for Coffee Shop
+            BrewManager
           </Typography>
         </Box>
 
@@ -94,7 +110,7 @@ const Header = () => {
                 border: '2px solid rgba(255, 255, 255, 0.3)',
               }}
             >
-              {getRoleIcon(admin.role)}
+              {getRoleIcon(user.role)}
             </Avatar>
             
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
@@ -106,13 +122,13 @@ const Header = () => {
                   lineHeight: 1.2,
                 }}
               >
-                {admin.name}
+                {user.name}
               </Typography>
               <Chip
-                label={admin.role}
+                label={user.role}
                 size="small"
                 sx={{
-                  bgcolor: getRoleColor(admin.role),
+                  bgcolor: getRoleColor(user.role),
                   color: 'white',
                   fontWeight: 'bold',
                   fontSize: '0.75rem',
@@ -168,19 +184,19 @@ const Header = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar 
                   sx={{ 
-                    bgcolor: getRoleColor(admin.role),
+                    bgcolor: getRoleColor(user.role),
                     width: 32,
                     height: 32,
                   }}
                 >
-                  {getRoleIcon(admin.role)}
+                  {getRoleIcon(user.role)}
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {admin.name}
+                    {user.name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {admin.email}
+                    {user.email}
                   </Typography>
                 </Box>
               </Box>

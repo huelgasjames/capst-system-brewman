@@ -52,7 +52,7 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import Header from '../components/Header';
 import api from '../services/api';
 
@@ -71,7 +71,7 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 function InventoryManagement() {
-  const { admin } = useAuth();
+  const { user } = useUnifiedAuth();
   const [tabValue, setTabValue] = useState(0);
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
@@ -112,7 +112,7 @@ function InventoryManagement() {
 
   const [inventoryForm, setInventoryForm] = useState({
     product_id: '',
-    branch_id: admin?.branch_id || '',
+    branch_id: user?.branch_id || '',
     change_type: '',
     quantity: '',
     date: new Date().toISOString().split('T')[0],
@@ -129,25 +129,25 @@ function InventoryManagement() {
   });
 
   useEffect(() => {
-    if (admin) {
+    if (user) {
       fetchData();
     }
-  }, [admin]);
+  }, [user]);
 
-  // Set default branch_id when admin or branches are available
+  // Set default branch_id when user or branches are available
   useEffect(() => {
-    console.log('Admin object:', admin);
+    console.log('Admin object:', user);
     console.log('Branches array:', branches);
     console.log('Current productForm.branch_id:', productForm.branch_id);
     
-    if (admin?.branch_id && branches.length > 0) {
+    if (user?.branch_id && branches.length > 0) {
       // For Branch Managers - set their specific branch
-      console.log('Setting branch_id to admin branch:', admin.branch_id);
+      console.log('Setting branch_id to user branch:', user.branch_id);
       setProductForm(prev => ({
         ...prev,
-        branch_id: admin.branch_id
+        branch_id: user.branch_id
       }));
-    } else if (!admin?.branch_id && branches.length > 0 && !productForm.branch_id) {
+    } else if (!user?.branch_id && branches.length > 0 && !productForm.branch_id) {
       // For SuperAdmin users - set the first branch as default
       console.log('Setting default branch to first available branch for SuperAdmin');
       setProductForm(prev => ({
@@ -155,7 +155,7 @@ function InventoryManagement() {
         branch_id: branches[0].branch_id
       }));
     }
-  }, [admin, branches, productForm.branch_id]);
+  }, [user, branches, productForm.branch_id]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -177,9 +177,9 @@ function InventoryManagement() {
   const fetchProducts = async () => {
     try {
       const params = {};
-      // Only add branch_id if admin has one (not for SuperAdmin)
-      if (admin?.branch_id) {
-        params.branch_id = admin.branch_id;
+      // Only add branch_id if user has one (not for SuperAdmin)
+      if (user?.branch_id) {
+        params.branch_id = user.branch_id;
       }
       
       console.log('Fetching products with params:', params);
@@ -211,9 +211,9 @@ function InventoryManagement() {
   const fetchInventoryLogs = async () => {
     try {
       const params = {};
-      // Only add branch_id if admin has one (not for SuperAdmin)
-      if (admin?.branch_id) {
-        params.branch_id = admin.branch_id;
+      // Only add branch_id if user has one (not for SuperAdmin)
+      if (user?.branch_id) {
+        params.branch_id = user.branch_id;
       }
       
       const response = await api.get('/inventory/logs', { params });
@@ -241,9 +241,9 @@ function InventoryManagement() {
       
       // Filter branches based on user role
       let filteredBranches = branchesData;
-      if (admin?.branch_id) {
+      if (user?.branch_id) {
         // For Branch Managers, only show their assigned branch
-        filteredBranches = branchesData.filter(branch => branch.branch_id === admin.branch_id);
+        filteredBranches = branchesData.filter(branch => branch.branch_id === user.branch_id);
         console.log('Filtered branches for Branch Manager:', filteredBranches);
       }
       
@@ -267,9 +267,9 @@ function InventoryManagement() {
   const fetchInventorySummary = async () => {
     try {
       const params = {};
-      // Only add branch_id if admin has one (not for SuperAdmin)
-      if (admin?.branch_id) {
-        params.branch_id = admin.branch_id;
+      // Only add branch_id if user has one (not for SuperAdmin)
+      if (user?.branch_id) {
+        params.branch_id = user.branch_id;
       }
       
       const response = await api.get('/inventory/summary', { params });
@@ -295,9 +295,9 @@ function InventoryManagement() {
   const fetchLowStockAlerts = async () => {
     try {
       const params = {};
-      // Only add branch_id if admin has one (not for SuperAdmin)
-      if (admin?.branch_id) {
-        params.branch_id = admin.branch_id;
+      // Only add branch_id if user has one (not for SuperAdmin)
+      if (user?.branch_id) {
+        params.branch_id = user.branch_id;
       }
       
       const response = await api.get('/inventory/low-stock-alerts', { params });
@@ -488,7 +488,7 @@ function InventoryManagement() {
       sale_unit: '',
       base_price: '',
       low_stock_threshold: 10,
-      branch_id: admin?.branch_id || (branches.length > 0 ? branches[0].branch_id : ''),
+      branch_id: user?.branch_id || (branches.length > 0 ? branches[0].branch_id : ''),
       is_active: true
     });
   };
@@ -506,7 +506,7 @@ function InventoryManagement() {
   const resetInventoryForm = () => {
     setInventoryForm({
       product_id: '',
-      branch_id: admin?.branch_id || '',
+      branch_id: user?.branch_id || '',
       change_type: '',
       quantity: '',
       date: new Date().toISOString().split('T')[0],
@@ -883,7 +883,7 @@ function InventoryManagement() {
                     </TableCell>
                     <TableCell>{log.quantity}</TableCell>
                     <TableCell>{log.unit || log.product?.sale_unit || 'N/A'}</TableCell>
-                    <TableCell>{log.admin?.name}</TableCell>
+                    <TableCell>{log.user?.name}</TableCell>
                     <TableCell>{log.notes}</TableCell>
                   </TableRow>
                 ))}
@@ -1097,7 +1097,7 @@ function InventoryManagement() {
                     onChange={(e) => setProductForm({ ...productForm, branch_id: e.target.value })}
                     required
                     displayEmpty
-                    disabled={admin?.branch_id ? true : false} // Disable for Branch Managers
+                    disabled={user?.branch_id ? true : false} // Disable for Branch Managers
                     sx={{
                       fontSize: '1.2rem',
                       height: '64px',
@@ -1128,7 +1128,7 @@ function InventoryManagement() {
                       </MenuItem>
                     )}
                   </Select>
-                  {admin?.branch_id && (
+                  {user?.branch_id && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: '1rem' }}>
                       Branch is automatically set to your assigned branch
                     </Typography>

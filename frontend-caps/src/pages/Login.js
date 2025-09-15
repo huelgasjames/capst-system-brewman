@@ -22,11 +22,11 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import BMLogo from '../BM-Logo.png';
 
 function Login() {
-  const { login } = useAuth();
+  const { login } = useUnifiedAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -41,8 +41,9 @@ function Login() {
 
   // Redirect if already authenticated
   React.useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
+    const adminToken = localStorage.getItem('adminToken');
+    const userToken = localStorage.getItem('userToken');
+    if (adminToken || userToken) {
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
@@ -67,7 +68,7 @@ function Login() {
       const result = await login(formData.email, formData.password);
       
       if (result.success) {
-        // Navigate to the intended page or dashboard
+        // Navigate to the intended page or dashboard based on user type
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {

@@ -55,11 +55,11 @@ import {
   People as PeopleIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import Header from '../components/Header';
 
 function BranchManagement() {
-  const { admin, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders } = useUnifiedAuth();
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -413,7 +413,7 @@ function BranchManagement() {
   };
 
   // Check if user has permission to manage branches
-  if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
+  if (!user || !['Super Admin', 'Owner'].includes(user.role)) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h5" color="error" sx={{ mb: 2 }}>

@@ -1,16 +1,16 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Box } from '@mui/material';
-import Sidebar from '../components/Sidebar';
-import { useAuth } from '../contexts/AuthContext';
+import RoleBasedSidebar from '../components/RoleBasedSidebar';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 
 function DashboardLayout() {
-  const { admin } = useAuth();
+  const { user } = useUnifiedAuth();
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
-      <Sidebar />
+      <RoleBasedSidebar />
 
             {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

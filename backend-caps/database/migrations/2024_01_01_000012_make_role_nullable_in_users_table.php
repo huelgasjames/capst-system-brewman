@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->nullable();
-            $table->unsignedBigInteger('branch_id')->nullable();
-            $table->foreign('branch_id')->references('branch_id')->on('branches')->onDelete('set null');
+            // Make role field nullable
+            $table->string('role')->nullable()->change();
         });
     }
 
@@ -24,8 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['branch_id']);
-            $table->dropColumn(['role', 'branch_id']);
+            // Revert role field to not nullable with default value
+            $table->string('role')->default('User')->change();
         });
     }
 };

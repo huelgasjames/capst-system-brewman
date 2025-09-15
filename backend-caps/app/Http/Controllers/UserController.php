@@ -27,8 +27,8 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'required|string|in:Branch Manager,Cashier,Barista,Staff',
-            'branch_id' => 'required|integer|exists:branches,branch_id',
+            'role' => 'nullable|string|in:Branch Manager,Cashier,Barista,Staff',
+            'branch_id' => 'nullable|integer|exists:branches,branch_id',
         ]);
 
         $validated['password'] = bcrypt($validated['password']); // Hash password
@@ -78,7 +78,7 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . $id . ',user_id',
             'password' => 'sometimes|nullable|min:6',
-            'role' => 'sometimes|string|in:Branch Manager,Cashier,Barista,Staff',
+            'role' => 'sometimes|nullable|string|in:Branch Manager,Cashier,Barista,Staff',
             'branch_id' => 'sometimes|nullable|integer|exists:branches,branch_id',
         ]);
 

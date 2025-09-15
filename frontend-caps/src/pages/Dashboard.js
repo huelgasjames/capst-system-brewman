@@ -15,10 +15,11 @@ import {
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import Header from '../components/Header';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
+import InventoryDashboardWidget from '../components/dashboard/InventoryDashboardWidget';
 
 function Dashboard() {
-  const { admin } = useAuth();
+  const { user } = useUnifiedAuth();
 
   const getRoleColor = (role) => {
     const colors = {
@@ -45,33 +46,33 @@ function Dashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
             <Avatar 
               sx={{ 
-                bgcolor: getRoleColor(admin?.role),
+                bgcolor: getRoleColor(user?.role),
                 width: 80,
                 height: 80,
                 border: '4px solid rgba(139, 69, 19, 0.2)',
               }}
             >
-              {getRoleIcon(admin?.role)}
+              {getRoleIcon(user?.role)}
             </Avatar>
             <Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
-                Welcome back, {admin?.name}! 👋
+                Welcome back, {user?.name}! 👋
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                You are currently logged in as a <strong>{admin?.role}</strong> with full access to the Brew Manager system.
+                You are currently logged in as a <strong>{user?.role}</strong> with full access to the Brew Manager system.
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Chip
-                  label={admin?.email}
+                  label={user?.email}
                   variant="outlined"
                   size="medium"
                   sx={{ borderColor: 'primary.main', color: 'primary.main', fontSize: '1rem' }}
                 />
                 <Chip
-                  label={`Role: ${admin?.role}`}
+                  label={`Role: ${user?.role}`}
                   size="medium"
                   sx={{
-                    bgcolor: getRoleColor(admin?.role),
+                    bgcolor: getRoleColor(user?.role),
                     color: 'white',
                     fontWeight: 'bold',
                     fontSize: '1rem'
@@ -181,6 +182,14 @@ function Dashboard() {
           </Grid>
         </Grid>
 
+        {/* Inventory Management Section */}
+        <Paper elevation={2} sx={{ p: 4, borderRadius: 3, mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 3 }}>
+            Inventory Management System
+          </Typography>
+          <InventoryDashboardWidget userRole={user?.role} />
+        </Paper>
+
         {/* System Information */}
         <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 3 }}>
@@ -193,16 +202,16 @@ function Dashboard() {
                   Current Session
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Admin ID:</strong> {admin?.admin_id}
+                  <strong>Admin ID:</strong> {user?.user_id}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Name:</strong> {admin?.name}
+                  <strong>Name:</strong> {user?.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Email:</strong> {admin?.email}
+                  <strong>Email:</strong> {user?.email}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Role:</strong> {admin?.role}
+                  <strong>Role:</strong> {user?.role}
                 </Typography>
               </Box>
             </Grid>
@@ -216,6 +225,9 @@ function Dashboard() {
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <strong>Branch Management:</strong> Full Access
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <strong>Inventory Management:</strong> Full Access
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <strong>System Settings:</strong> Full Access

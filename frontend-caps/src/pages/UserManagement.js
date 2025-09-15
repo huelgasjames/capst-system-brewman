@@ -28,7 +28,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   TablePagination,
 } from '@mui/material';
 import {
@@ -47,10 +46,10 @@ import {
   Groups as StaffIcon,
 } from '@mui/icons-material';
 import Header from '../components/Header';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 
 function UserManagement() {
-  const { admin, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders } = useUnifiedAuth();
   const [users, setUsers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +83,7 @@ function UserManagement() {
     severity: 'success',
   });
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
 
   const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
@@ -221,6 +220,14 @@ function UserManagement() {
         [name]: '',
       }));
     }
+    
+    // Clear role error specifically when role is changed
+    if (name === 'role' && formErrors.role) {
+      setFormErrors(prev => ({
+        ...prev,
+        role: '',
+      }));
+    }
   };
 
   const validatePassword = () => {
@@ -277,8 +284,8 @@ function UserManagement() {
       const dataToSend = {
         name: formData.name,
         email: formData.email,
-        role: formData.role,
-        branch_id: formData.branch_id || null,
+        role: formData.role && formData.role !== '' ? formData.role : null,
+        branch_id: formData.branch_id && formData.branch_id !== '' ? formData.branch_id : null,
       };
       
       console.log('Submitting user data:', dataToSend);
@@ -308,6 +315,13 @@ function UserManagement() {
           message: editingUser ? 'User updated successfully!' : 'User created successfully!',
           severity: 'success',
         });
+        // Clear form errors on success
+        setFormErrors({
+          name: '',
+          email: '',
+          role: '',
+          branch_id: '',
+        });
         handleCloseDialog();
         fetchUsers();
       } else {
@@ -315,6 +329,16 @@ function UserManagement() {
         console.error('User creation/update failed:', errorData);
         console.error('Response status:', response.status);
         console.error('Response status text:', response.statusText);
+        
+        // Handle validation errors from backend
+        if (errorData.errors) {
+          const newFormErrors = {};
+          Object.keys(errorData.errors).forEach(field => {
+            newFormErrors[field] = errorData.errors[field][0]; // Take first error message
+          });
+          setFormErrors(newFormErrors);
+        }
+        
         setSnackbar({
           open: true,
           message: errorData.message || `Operation failed (${response.status})`,
@@ -390,6 +414,12 @@ function UserManagement() {
       branch_id: '',
     });
     setPasswordError('');
+    setFormErrors({
+      name: '',
+      email: '',
+      role: '',
+      branch_id: '',
+    });
     setShowPassword(false);
     setShowConfirmPassword(false);
   };
@@ -479,7 +509,7 @@ function UserManagement() {
 
   
   // Check if user has permission to manage users
-  if (!admin || !['Super Admin', 'Owner'].includes(admin.role)) {
+  if (!user || !['Super Admin', 'Owner'].includes(user.role)) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h5" color="error" sx={{ mb: 2 }}>
@@ -926,17 +956,32 @@ function UserManagement() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={getRoleDisplayName(user.role)}
-                          size="small"
-                          sx={{
-                            background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}DD 100%)`,
-                            color: 'white',
-                            fontWeight: 600,
-                            fontSize: '0.75rem',
-                            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                          }}
-                        />
+                        {user.role && user.role !== '' ? (
+                          <Chip
+                            label={getRoleDisplayName(user.role)}
+                            size="small"
+                            sx={{
+                              background: `linear-gradient(135deg, ${getRoleColor(user.role)} 0%, ${getRoleColor(user.role)}DD 100%)`,
+                              color: 'white',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                            }}
+                          />
+                        ) : (
+                          <Chip
+                            label="Unassigned"
+                            size="small"
+                            sx={{
+                              background: 'linear-gradient(135deg, #9e9e9e 0%, #bdbdbd 100%)',
+                              color: 'white',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                              fontStyle: 'italic',
+                            }}
+                          />
+                        )}
                       </TableCell>
                       <TableCell>
                         {user.branch_id ? (
@@ -950,9 +995,12 @@ function UserManagement() {
                             </Typography>
                           </Box>
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            No branch assigned
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <BusinessIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                              Unassigned
+                            </Typography>
+                          </Box>
                         )}
                       </TableCell>
                       <TableCell>
@@ -1439,14 +1487,13 @@ function UserManagement() {
                           mb: 1.5,
                           ml: 1
                         }}>
-                          User Role *
+                          User Role
                         </Typography>
                         <FormControl fullWidth variant="filled" size="large" error={!!formErrors.role}>
                           <Select
                             name="role"
                             value={formData.role}
                             onChange={handleInputChange}
-                            required
                             displayEmpty
                             sx={{
                               fontSize: '1.1rem',
@@ -1475,14 +1522,29 @@ function UserManagement() {
                             }}
                             renderValue={(selected) => {
                               if (!selected) {
-                                return <em style={{ color: '#999' }}>Select role</em>;
+                                return <em style={{ color: '#999' }}>Select role or leave unassigned</em>;
+                              }
+                              if (selected === 'unassigned') {
+                                return 'Unassigned (No Role)';
                               }
                               const role = getAvailableRoles().find(r => r.value === selected);
                               return role ? role.label : selected;
                             }}
                           >
-                            <MenuItem value="" disabled>
-                              <em>Select role</em>
+                            <MenuItem value="">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box
+                                  sx={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    bgcolor: 'text.secondary',
+                                  }}
+                                />
+                                <Typography sx={{ fontSize: '1.1rem', color: 'text.secondary' }}>
+                                  Unassigned (No Role)
+                                </Typography>
+                              </Box>
                             </MenuItem>
                             {getAvailableRoles().map((role) => (
                               <MenuItem key={role.value} value={role.value}>
@@ -1510,7 +1572,7 @@ function UserManagement() {
                           ml: 1,
                           display: 'block'
                         }}>
-                          {formErrors.role || 'Choose the user\'s role and permissions'}
+                          {formErrors.role || 'Choose the user\'s role and permissions or leave unassigned'}
                         </Typography>
                       </Box>
                     </Grid>
@@ -1524,14 +1586,13 @@ function UserManagement() {
                           mb: 1.5,
                           ml: 1
                         }}>
-                          Branch Assignment *
+                          Branch Assignment
                         </Typography>
                         <FormControl fullWidth variant="filled" size="large" error={!!formErrors.branch_id}>
                           <Select
                             name="branch_id"
                             value={formData.branch_id}
                             onChange={handleInputChange}
-                            required
                             displayEmpty
                             sx={{
                               fontSize: '1.1rem',
@@ -1560,14 +1621,22 @@ function UserManagement() {
                             }}
                             renderValue={(selected) => {
                               if (!selected) {
-                                return <em style={{ color: '#999' }}>Select branch</em>;
+                                return <em style={{ color: '#999' }}>Select branch or leave unassigned</em>;
+                              }
+                              if (selected === 'unassigned') {
+                                return 'Unassigned (No Branch)';
                               }
                               const branch = branches.find(b => (b.id || b.branch_id) === selected);
                               return branch ? (branch.name || branch.branch_name) : 'Unknown Branch';
                             }}
                           >
-                            <MenuItem value="" disabled>
-                              <em>Select branch</em>
+                            <MenuItem value="">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <BusinessIcon fontSize="medium" sx={{ color: 'text.secondary' }} />
+                                <Typography sx={{ fontSize: '1.1rem', color: 'text.secondary' }}>
+                                  Unassigned (No Branch)
+                                </Typography>
+                              </Box>
                             </MenuItem>
                             {branches.map((branch) => (
                               <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
@@ -1588,7 +1657,7 @@ function UserManagement() {
                           ml: 1,
                           display: 'block'
                         }}>
-                          {formErrors.branch_id || 'Assign user to a specific branch (required)'}
+                          {formErrors.branch_id || 'Assign user to a specific branch or leave unassigned'}
                         </Typography>
                       </Box>
                     </Grid>
@@ -1627,7 +1696,7 @@ function UserManagement() {
             type="submit" 
             form="user-form"
             variant="contained"
-            disabled={!formData.name || !formData.email || !formData.role || !formData.branch_id || !canAddUsers}
+            disabled={!formData.name || !formData.email || !canAddUsers}
             size="large"
             sx={{
               background: 'linear-gradient(45deg, #8B4513 30%, #A0522D 90%)',
@@ -1685,6 +1754,14 @@ function UserManagement() {
                       padding: '16px 14px',
                     }}
                   >
+                    <MenuItem value="">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <BusinessIcon fontSize="medium" sx={{ color: 'text.secondary' }} />
+                        <Typography sx={{ fontSize: '1.1rem', color: 'text.secondary' }}>
+                          Unassigned (No Branch)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
                     {Array.isArray(branches) && branches.map((branch) => (
                       <MenuItem key={branch.id || branch.branch_id} value={branch.id || branch.branch_id}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1710,6 +1787,21 @@ function UserManagement() {
                       padding: '16px 14px',
                     }}
                   >
+                    <MenuItem value="">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            bgcolor: 'text.secondary',
+                          }}
+                        />
+                        <Typography sx={{ fontSize: '1.1rem', color: 'text.secondary' }}>
+                          Unassigned (No Role)
+                        </Typography>
+                      </Box>
+                    </MenuItem>
                     {getAvailableRoles().map((role) => (
                       <MenuItem key={role.value} value={role.value}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -29,20 +29,20 @@ import {
 } from '@mui/icons-material';
 import bmLogo from '../BM-Logo.png';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 
 const drawerWidth = 260;
 
 function Sidebar() {
   const location = useLocation();
-  const { admin } = useAuth();
+  const { user } = useUnifiedAuth();
   
   const isActive = (path) => location.pathname === path;
 
   // Role-based permissions
-  const canManageUsers = admin && ['Super Admin', 'Owner'].includes(admin.role);
-  const canManageBranches = admin && ['Super Admin', 'Owner'].includes(admin.role);
-  const canManageSystem = admin && ['Super Admin', 'Owner'].includes(admin.role);
+  const canManageUsers = user && ['Super Admin', 'Owner'].includes(user.role);
+  const canManageBranches = user && ['Super Admin', 'Owner'].includes(user.role);
+  const canManageSystem = user && ['Super Admin', 'Owner'].includes(user.role);
 
   // Helper function to get role display name
   const getRoleDisplayName = (role) => {
@@ -85,7 +85,7 @@ function Sidebar() {
         </Box>
 
         {/* User Role Display */}
-        {admin && (
+        {user && (
           <Box sx={{ 
             mb: 2, 
             p: 2, 
@@ -94,10 +94,10 @@ function Sidebar() {
             textAlign: 'center'
           }}>
             <Typography variant="body2" sx={{ color: '#8B4513', fontWeight: 'bold' }}>
-              {admin.name}
+              {user.name}
             </Typography>
             <Typography variant="caption" sx={{ color: '#A0522D' }}>
-              {getRoleDisplayName(admin.role)}
+              {getRoleDisplayName(user.role)}
             </Typography>
           </Box>
         )}

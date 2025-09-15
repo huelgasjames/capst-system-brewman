@@ -8,10 +8,40 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\InventoryCountController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\LowStockAlertController;
 
 // Default test route
 Route::get('/test', function () {
     return response()->json(['message' => 'API is working!']);
+});
+
+// Health check endpoint
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'message' => 'BrewManager API is running',
+        'timestamp' => now(),
+        'version' => '1.0.0'
+    ]);
+});
+
+// Test endpoint to verify token
+Route::get('/test-token', function (Request $request) {
+    $token = $request->bearerToken();
+    $authHeader = $request->header('Authorization');
+    
+    return response()->json([
+        'message' => 'Token test endpoint',
+        'hasToken' => !empty($token),
+        'tokenPreview' => $token ? substr($token, 0, 20) . '...' : 'none',
+        'authHeader' => $authHeader,
+        'allHeaders' => $request->headers->all()
+    ]);
 });
 
 // Test database connection
@@ -94,6 +124,10 @@ Route::post('/branch-manager/logout', [AuthController::class, 'branchManagerLogo
 Route::get('/branch-manager/me', [AuthController::class, 'branchManagerMe'])->middleware('branchmanager.token');
 Route::get('/branch-manager/check-auth', [AuthController::class, 'checkBranchManagerAuth'])->middleware('branchmanager.token');
 
+// Unified User Authentication Routes (for all user types)
+Route::post('/user/login', [AuthController::class, 'userLogin']);
+Route::get('/user/check-auth', [AuthController::class, 'checkUserAuth'])->middleware('branchmanager.token');
+
 // Protected Routes - Require Admin Authentication
 Route::middleware(['admin.token'])->group(function () {
     // User Management CRUD
@@ -143,5 +177,114 @@ Route::middleware(['admin.token'])->group(function () {
     Route::get('/inventory/change-types', [InventoryController::class, 'getChangeTypes']); // Get change types
     Route::get('/inventory/low-stock-alerts', [InventoryController::class, 'getLowStockAlerts']); // Get low stock alerts
     Route::get('/inventory/branch-report', [InventoryController::class, 'getBranchInventoryReport']); // Get branch inventory report
+
+    // Purchase Order Management
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);           // Get all purchase orders
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);          // Create purchase order
+    Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);       // Get purchase order by ID
+    Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);     // Update purchase order
+    Route::post('/purchase-orders/{id}/submit', [PurchaseOrderController::class, 'submitForApproval']); // Submit for approval
+    Route::post('/purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve']); // Approve purchase order
+    Route::post('/purchase-orders/{id}/deliver', [PurchaseOrderController::class, 'markAsDelivered']); // Mark as delivered
+    Route::post('/purchase-orders/{id}/cancel', [PurchaseOrderController::class, 'cancel']); // Cancel purchase order
+    Route::get('/purchase-orders/low-stock-products', [PurchaseOrderController::class, 'getLowStockProducts']); // Get low stock products
+
+    // Stock Transfer Management
+    Route::get('/stock-transfers', [StockTransferController::class, 'index']);           // Get all stock transfers
+    Route::post('/stock-transfers', [StockTransferController::class, 'store']);          // Create stock transfer
+    Route::get('/stock-transfers/{id}', [StockTransferController::class, 'show']);       // Get stock transfer by ID
+    Route::put('/stock-transfers/{id}', [StockTransferController::class, 'update']);     // Update stock transfer
+    Route::post('/stock-transfers/{id}/approve', [StockTransferController::class, 'approve']); // Approve stock transfer
+    Route::post('/stock-transfers/{id}/complete', [StockTransferController::class, 'complete']); // Complete stock transfer
+    Route::post('/stock-transfers/{id}/reject', [StockTransferController::class, 'reject']); // Reject stock transfer
+    Route::post('/stock-transfers/{id}/cancel', [StockTransferController::class, 'cancel']); // Cancel stock transfer
+
+    // Stock Adjustment Management
+    Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index']);           // Get all stock adjustments
+    Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);          // Create stock adjustment
+    Route::get('/stock-adjustments/{id}', [StockAdjustmentController::class, 'show']);       // Get stock adjustment by ID
+    Route::put('/stock-adjustments/{id}', [StockAdjustmentController::class, 'update']);     // Update stock adjustment
+    Route::post('/stock-adjustments/{id}/approve', [StockAdjustmentController::class, 'approve']); // Approve stock adjustment
+    Route::post('/stock-adjustments/{id}/reject', [StockAdjustmentController::class, 'reject']); // Reject stock adjustment
+    Route::get('/stock-adjustments/reasons', [StockAdjustmentController::class, 'getAdjustmentReasons']); // Get adjustment reasons
+
+    // Inventory Count Management
+    Route::get('/inventory-counts', [InventoryCountController::class, 'index']);           // Get all inventory counts
+    Route::post('/inventory-counts', [InventoryCountController::class, 'store']);          // Create inventory count
+    Route::get('/inventory-counts/{id}', [InventoryCountController::class, 'show']);       // Get inventory count by ID
+    Route::put('/inventory-counts/{id}', [InventoryCountController::class, 'update']);     // Update inventory count
+    Route::post('/inventory-counts/{id}/items', [InventoryCountController::class, 'addItem']); // Add item to count
+    Route::put('/inventory-counts/{id}/items/{itemId}', [InventoryCountController::class, 'updateItem']); // Update count item
+    Route::delete('/inventory-counts/{id}/items/{itemId}', [InventoryCountController::class, 'removeItem']); // Remove count item
+    Route::post('/inventory-counts/{id}/complete', [InventoryCountController::class, 'complete']); // Complete inventory count
+    Route::post('/inventory-counts/{id}/approve', [InventoryCountController::class, 'approve']); // Approve inventory count
+    Route::get('/inventory-counts/{id}/products', [InventoryCountController::class, 'getProductsForCount']); // Get products for count
+
+    // Supplier Management
+    Route::get('/suppliers', [SupplierController::class, 'index']);           // Get all suppliers
+    Route::post('/suppliers', [SupplierController::class, 'store']);          // Create supplier
+    Route::get('/suppliers/{id}', [SupplierController::class, 'show']);       // Get supplier by ID
+    Route::put('/suppliers/{id}', [SupplierController::class, 'update']);     // Update supplier
+    Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy']); // Delete supplier
+    Route::get('/suppliers/active/list', [SupplierController::class, 'getActiveSuppliers']); // Get active suppliers
+    Route::get('/suppliers/{id}/stats', [SupplierController::class, 'getSupplierStats']); // Get supplier statistics
+
+    // Low Stock Alerts and Automated Restocking
+    Route::get('/low-stock-alerts/products', [LowStockAlertController::class, 'getLowStockProducts']); // Get low stock products
+    Route::get('/low-stock-alerts/out-of-stock', [LowStockAlertController::class, 'getOutOfStockProducts']); // Get out of stock products
+    Route::post('/low-stock-alerts/restocking-request', [LowStockAlertController::class, 'createAutomatedRestockingRequest']); // Create automated restocking request
+    Route::get('/low-stock-alerts/suggestions', [LowStockAlertController::class, 'getRestockingSuggestions']); // Get restocking suggestions
+    Route::get('/low-stock-alerts/inventory-summary', [LowStockAlertController::class, 'getInventorySummary']); // Get inventory summary
+});
+
+// Protected Routes - Require Branch Manager Authentication
+Route::middleware(['branchmanager.token'])->group(function () {
+    // Purchase Order Management (Branch Manager can create and manage their branch's orders)
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);           // Get branch purchase orders
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);          // Create purchase order
+    Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);       // Get purchase order by ID
+    Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);     // Update purchase order
+    Route::post('/purchase-orders/{id}/submit', [PurchaseOrderController::class, 'submitForApproval']); // Submit for approval
+    Route::post('/purchase-orders/{id}/deliver', [PurchaseOrderController::class, 'markAsDelivered']); // Mark as delivered
+    Route::post('/purchase-orders/{id}/cancel', [PurchaseOrderController::class, 'cancel']); // Cancel purchase order
+    Route::get('/purchase-orders/low-stock-products', [PurchaseOrderController::class, 'getLowStockProducts']); // Get low stock products
+
+    // Stock Transfer Management (Branch Manager can request transfers)
+    Route::get('/stock-transfers', [StockTransferController::class, 'index']);           // Get branch stock transfers
+    Route::post('/stock-transfers', [StockTransferController::class, 'store']);          // Create stock transfer request
+    Route::get('/stock-transfers/{id}', [StockTransferController::class, 'show']);       // Get stock transfer by ID
+    Route::put('/stock-transfers/{id}', [StockTransferController::class, 'update']);     // Update stock transfer
+    Route::post('/stock-transfers/{id}/complete', [StockTransferController::class, 'complete']); // Complete stock transfer
+    Route::post('/stock-transfers/{id}/cancel', [StockTransferController::class, 'cancel']); // Cancel stock transfer
+
+    // Stock Adjustment Management (Branch Manager can create adjustments)
+    Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index']);           // Get branch stock adjustments
+    Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);          // Create stock adjustment
+    Route::get('/stock-adjustments/{id}', [StockAdjustmentController::class, 'show']);       // Get stock adjustment by ID
+    Route::put('/stock-adjustments/{id}', [StockAdjustmentController::class, 'update']);     // Update stock adjustment
+    Route::get('/stock-adjustments/reasons', [StockAdjustmentController::class, 'getAdjustmentReasons']); // Get adjustment reasons
+
+    // Inventory Count Management (Branch Manager can conduct counts)
+    Route::get('/inventory-counts', [InventoryCountController::class, 'index']);           // Get branch inventory counts
+    Route::post('/inventory-counts', [InventoryCountController::class, 'store']);          // Create inventory count
+    Route::get('/inventory-counts/{id}', [InventoryCountController::class, 'show']);       // Get inventory count by ID
+    Route::put('/inventory-counts/{id}', [InventoryCountController::class, 'update']);     // Update inventory count
+    Route::post('/inventory-counts/{id}/items', [InventoryCountController::class, 'addItem']); // Add item to count
+    Route::put('/inventory-counts/{id}/items/{itemId}', [InventoryCountController::class, 'updateItem']); // Update count item
+    Route::delete('/inventory-counts/{id}/items/{itemId}', [InventoryCountController::class, 'removeItem']); // Remove count item
+    Route::post('/inventory-counts/{id}/complete', [InventoryCountController::class, 'complete']); // Complete inventory count
+    Route::get('/inventory-counts/{id}/products', [InventoryCountController::class, 'getProductsForCount']); // Get products for count
+
+    // Supplier Management (Branch Manager can view suppliers)
+    Route::get('/suppliers', [SupplierController::class, 'index']);           // Get all suppliers
+    Route::get('/suppliers/{id}', [SupplierController::class, 'show']);       // Get supplier by ID
+    Route::get('/suppliers/active/list', [SupplierController::class, 'getActiveSuppliers']); // Get active suppliers
+
+    // Low Stock Alerts and Automated Restocking (Branch Manager can view alerts and create requests)
+    Route::get('/low-stock-alerts/products', [LowStockAlertController::class, 'getLowStockProducts']); // Get low stock products
+    Route::get('/low-stock-alerts/out-of-stock', [LowStockAlertController::class, 'getOutOfStockProducts']); // Get out of stock products
+    Route::post('/low-stock-alerts/restocking-request', [LowStockAlertController::class, 'createAutomatedRestockingRequest']); // Create automated restocking request
+    Route::get('/low-stock-alerts/suggestions', [LowStockAlertController::class, 'getRestockingSuggestions']); // Get restocking suggestions
+    Route::get('/low-stock-alerts/inventory-summary', [LowStockAlertController::class, 'getInventorySummary']); // Get inventory summary
 });
 

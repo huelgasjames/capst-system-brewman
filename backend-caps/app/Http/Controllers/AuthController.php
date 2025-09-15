@@ -254,6 +254,145 @@ class AuthController extends Controller
     }
 
     /**
+     * Handle unified user login (for all user types)
+     */
+    public function userLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        // Debug logging
+        \Log::info('User login attempt', [
+            'email' => $request->email,
+            'password_length' => strlen($request->password)
+        ]);
+
+        // Try to find user in users table first
+        $user = User::where('email', $request->email)
+                   ->with('branch')
+                   ->first();
+
+        if ($user && Hash::check($request->password, $user->password)) {
+            // Check if user has a branch assigned (for branch-specific roles)
+            if (in_array($user->role, ['Branch Manager', 'Staff', 'Cashier', 'Barista', 'Server']) && !$user->branch_id) {
+                return response()->json([
+                    'message' => 'Access denied. User must be assigned to a branch.',
+                ], 403);
+            }
+
+            // Create a simple token
+            $token = bin2hex(random_bytes(32));
+            $user->remember_token = $token;
+            $user->save();
+
+            return response()->json([
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'branch_id' => $user->branch_id,
+                    'branch' => $user->branch ? [
+                        'branch_id' => $user->branch->branch_id,
+                        'branch_name' => $user->branch->branch_name,
+                        'location' => $user->branch->location,
+                        'status' => $user->branch->status,
+                    ] : null
+                ],
+                'token' => $token,
+                'message' => 'User login successful',
+            ]);
+        }
+
+        // If not found in users table, try admin table
+        $admin = Admin::where('email', $request->email)->first();
+
+        if ($admin && Hash::check($request->password, $admin->password)) {
+            // Check if admin has valid role
+            if (!in_array($admin->role, ['Super Admin', 'Owner', 'Admin'])) {
+                return response()->json([
+                    'message' => 'Access denied. Invalid admin role.',
+                ], 403);
+            }
+
+            // Create a simple token
+            $token = bin2hex(random_bytes(32));
+            $admin->remember_token = $token;
+            $admin->save();
+
+            return response()->json([
+                'admin' => [
+                    'admin_id' => $admin->admin_id,
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'role' => $admin->role,
+                ],
+                'token' => $token,
+                'message' => 'Admin login successful',
+            ]);
+        }
+
+        // If neither user nor admin found
+        \Log::warning('User login failed', [
+            'email' => $request->email,
+            'user_found' => $user ? 'yes' : 'no',
+            'admin_found' => $admin ? 'yes' : 'no',
+        ]);
+        
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials are incorrect.'],
+        ]);
+    }
+
+    /**
+     * Check user authentication (unified)
+     */
+    public function checkUserAuth(Request $request)
+    {
+        // Get user from request (set by middleware)
+        $user = $request->get('user');
+        $admin = $request->get('admin');
+        
+        if ($user) {
+            return response()->json([
+                'authenticated' => true,
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'branch_id' => $user->branch_id,
+                    'branch' => $user->branch ? [
+                        'branch_id' => $user->branch->branch_id,
+                        'branch_name' => $user->branch->branch_name,
+                        'location' => $user->branch->location,
+                        'status' => $user->branch->status,
+                    ] : null
+                ],
+            ]);
+        }
+        
+        if ($admin) {
+            return response()->json([
+                'authenticated' => true,
+                'admin' => [
+                    'admin_id' => $admin->admin_id,
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'role' => $admin->role,
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'authenticated' => false,
+            'message' => 'User not authenticated',
+        ], 401);
+    }
+
+    /**
      * Get current authenticated Branch Manager
      */
     public function branchManagerMe(Request $request)

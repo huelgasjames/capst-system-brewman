@@ -24,6 +24,11 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
         ]);
 
+        // Create test users
+        $this->call([
+            TestUserSeeder::class,
+        ]);
+
 
         // Create sample users with roles and branch assignments
         User::create([
