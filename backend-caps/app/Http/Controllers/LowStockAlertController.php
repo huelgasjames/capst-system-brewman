@@ -41,22 +41,22 @@ class LowStockAlertController extends Controller
             ->get()
             ->filter(function ($product) use ($branchId) {
                 $currentStock = $product->getCurrentStock($branchId);
-                return $currentStock <= $product->low_stock_threshold;
+                return $product->isLowStock($branchId, 10); // Use default threshold of 10
             })
             ->map(function ($product) use ($branchId) {
                 $currentStock = $product->getCurrentStock($branchId);
-                $status = $product->getStockStatus($branchId);
+                $status = $product->getStockStatus($branchId, 10);
                 
                 return [
                     'product_id' => $product->product_id,
                     'name' => $product->name,
                     'category' => $product->category,
                     'current_stock' => $currentStock,
-                    'low_stock_threshold' => $product->low_stock_threshold,
+                    'low_stock_threshold' => 10, // Default threshold
                     'base_price' => $product->base_price,
                     'product_unit' => $product->product_unit,
                     'status' => $status,
-                    'status_with_color' => $product->getStockStatusWithColor($branchId),
+                    'status_with_color' => $product->getStockStatusWithColor($branchId, 10),
                     'suggested_restock_quantity' => $this->calculateSuggestedRestockQuantity($product, $currentStock)
                 ];
             })
@@ -101,7 +101,7 @@ class LowStockAlertController extends Controller
                     'name' => $product->name,
                     'category' => $product->category,
                     'current_stock' => 0,
-                    'low_stock_threshold' => $product->low_stock_threshold,
+                    'low_stock_threshold' => 10, // Default threshold
                     'base_price' => $product->base_price,
                     'product_unit' => $product->product_unit,
                     'suggested_restock_quantity' => $this->calculateSuggestedRestockQuantity($product, 0)
@@ -219,7 +219,7 @@ class LowStockAlertController extends Controller
             ->get()
             ->filter(function ($product) use ($branchId) {
                 $currentStock = $product->getCurrentStock($branchId);
-                return $currentStock <= $product->low_stock_threshold;
+                return $product->isLowStock($branchId, 10); // Use default threshold of 10
             });
 
         // Group products by category for better organization
@@ -232,7 +232,7 @@ class LowStockAlertController extends Controller
                         'product_id' => $product->product_id,
                         'name' => $product->name,
                         'current_stock' => $currentStock,
-                        'low_stock_threshold' => $product->low_stock_threshold,
+                        'low_stock_threshold' => 10, // Default threshold
                         'base_price' => $product->base_price,
                         'product_unit' => $product->product_unit,
                         'suggested_restock_quantity' => $this->calculateSuggestedRestockQuantity($product, $currentStock),
@@ -319,13 +319,14 @@ class LowStockAlertController extends Controller
 
     private function calculateSuggestedRestockQuantity($product, $currentStock)
     {
-        // Calculate suggested restock quantity based on low stock threshold
+        // Calculate suggested restock quantity based on default low stock threshold
         // This is a simple calculation - you can make it more sophisticated
-        $suggestedQuantity = $product->low_stock_threshold * 3; // Restock to 3x the threshold
+        $threshold = 10; // Default threshold
+        $suggestedQuantity = $threshold * 3; // Restock to 3x the threshold
         
         // If out of stock, suggest a minimum quantity
         if ($currentStock <= 0) {
-            $suggestedQuantity = max($suggestedQuantity, $product->low_stock_threshold * 2);
+            $suggestedQuantity = max($suggestedQuantity, $threshold * 2);
         }
         
         return $suggestedQuantity;
@@ -333,11 +334,12 @@ class LowStockAlertController extends Controller
 
     private function getUrgencyLevel($product, $currentStock)
     {
+        $threshold = 10; // Default threshold
         if ($currentStock <= 0) {
             return 'critical';
-        } elseif ($currentStock <= $product->low_stock_threshold * 0.5) {
+        } elseif ($currentStock <= $threshold * 0.5) {
             return 'high';
-        } elseif ($currentStock <= $product->low_stock_threshold) {
+        } elseif ($currentStock <= $threshold) {
             return 'medium';
         }
         

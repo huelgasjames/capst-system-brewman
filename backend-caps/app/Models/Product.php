@@ -19,14 +19,14 @@ class Product extends Model
         'product_unit',
         'sale_unit',
         'base_price',
-        'low_stock_threshold',
+        'cost_per_unit',
         'branch_id',
         'is_active'
     ];
 
     protected $casts = [
         'base_price' => 'decimal:2',
-        'low_stock_threshold' => 'integer',
+        'cost_per_unit' => 'decimal:2',
         'is_active' => 'boolean'
     ];
 
@@ -67,10 +67,10 @@ class Product extends Model
     }
 
     // Check if product is low on stock for a specific branch
-    public function isLowStock($branchId)
+    public function isLowStock($branchId, $threshold = 10)
     {
         $currentStock = $this->getCurrentStock($branchId);
-        return $currentStock <= $this->low_stock_threshold && $currentStock > 0;
+        return $currentStock <= $threshold && $currentStock > 0;
     }
 
     // Check if product is out of stock for a specific branch
@@ -80,13 +80,13 @@ class Product extends Model
     }
 
     // Get stock status for a specific branch
-    public function getStockStatus($branchId)
+    public function getStockStatus($branchId, $threshold = 10)
     {
         $currentStock = $this->getCurrentStock($branchId);
         
         if ($currentStock <= 0) {
             return 'out_of_stock';
-        } elseif ($currentStock <= $this->low_stock_threshold) {
+        } elseif ($currentStock <= $threshold) {
             return 'low_stock';
         } else {
             return 'in_stock';
@@ -94,9 +94,9 @@ class Product extends Model
     }
 
     // Get stock status with color for UI
-    public function getStockStatusWithColor($branchId)
+    public function getStockStatusWithColor($branchId, $threshold = 10)
     {
-        $status = $this->getStockStatus($branchId);
+        $status = $this->getStockStatus($branchId, $threshold);
         
         switch ($status) {
             case 'out_of_stock':

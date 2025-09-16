@@ -42,10 +42,12 @@ import {
   DateRange as DateRangeIcon,
   Notifications as NotificationIcon,
   Dashboard as DashboardIcon,
+  AccessTime as AttendanceIcon,
 } from '@mui/icons-material';
 import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import PurchaseOrderManagement from '../components/inventory/PurchaseOrderManagement';
 import StockTransferManagement from '../components/inventory/StockTransferManagement';
+import AttendanceManagement from '../components/attendance/AttendanceManagement';
 import { lowStockAlertService } from '../services/inventoryService';
 
 function TabPanel({ children, value, index, ...other }) {
@@ -348,6 +350,14 @@ function InventoryManagementSystem() {
                   </Box>
                 } 
               />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AttendanceIcon />
+                    Attendance
+                  </Box>
+                } 
+              />
             </Tabs>
           </Box>
 
@@ -403,7 +413,7 @@ function InventoryManagementSystem() {
                                 secondary={
                                   <Box>
                                     <Typography variant="body2" color="text.secondary">
-                                      Current: {product.current_stock} | Threshold: {product.low_stock_threshold}
+                                      Current: {product.current_stock} | Threshold: {product.low_stock_threshold || 10}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                       Suggested restock: {product.suggested_restock_quantity} {product.product_unit}
@@ -574,6 +584,11 @@ function InventoryManagementSystem() {
                 This module is under development. It will allow you to manage supplier information and relationships.
               </Typography>
             </Box>
+          </TabPanel>
+
+          {/* Attendance Tab */}
+          <TabPanel value={tabValue} index={6}>
+            <AttendanceManagement />
           </TabPanel>
         </Paper>
 

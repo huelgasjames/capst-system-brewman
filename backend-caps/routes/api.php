@@ -14,6 +14,7 @@ use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\InventoryCountController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\LowStockAlertController;
+use App\Http\Controllers\AttendanceController;
 
 // Default test route
 Route::get('/test', function () {
@@ -235,6 +236,11 @@ Route::middleware(['admin.token'])->group(function () {
     Route::post('/low-stock-alerts/restocking-request', [LowStockAlertController::class, 'createAutomatedRestockingRequest']); // Create automated restocking request
     Route::get('/low-stock-alerts/suggestions', [LowStockAlertController::class, 'getRestockingSuggestions']); // Get restocking suggestions
     Route::get('/low-stock-alerts/inventory-summary', [LowStockAlertController::class, 'getInventorySummary']); // Get inventory summary
+
+    // Attendance Management (Admin can view all branches)
+    Route::get('/attendance/branch', [AttendanceController::class, 'getBranchAttendance']); // Get branch attendance
+    Route::get('/attendance/summary', [AttendanceController::class, 'getAttendanceSummary']); // Get attendance summary
+    Route::get('/attendance/weekly-report', [AttendanceController::class, 'getWeeklyReport']); // Get weekly report
 });
 
 // Protected Routes - Require Branch Manager Authentication
@@ -286,5 +292,18 @@ Route::middleware(['branchmanager.token'])->group(function () {
     Route::post('/low-stock-alerts/restocking-request', [LowStockAlertController::class, 'createAutomatedRestockingRequest']); // Create automated restocking request
     Route::get('/low-stock-alerts/suggestions', [LowStockAlertController::class, 'getRestockingSuggestions']); // Get restocking suggestions
     Route::get('/low-stock-alerts/inventory-summary', [LowStockAlertController::class, 'getInventorySummary']); // Get inventory summary
+
+    // Attendance Management (Branch Manager can view their branch attendance)
+    Route::get('/attendance/branch', [AttendanceController::class, 'getBranchAttendance']); // Get branch attendance
+    Route::get('/attendance/summary', [AttendanceController::class, 'getAttendanceSummary']); // Get attendance summary
+    Route::get('/attendance/weekly-report', [AttendanceController::class, 'getWeeklyReport']); // Get weekly report
+});
+
+// Protected Routes - Require User Authentication (Cashiers and Baristas)
+Route::middleware(['user.token'])->group(function () {
+    // Attendance Management (Cashiers and Baristas can check in/out and view their attendance)
+    Route::get('/attendance/my-attendance', [AttendanceController::class, 'getMyAttendance']); // Get my attendance status
+    Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']); // Check in
+    Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']); // Check out
 });
 

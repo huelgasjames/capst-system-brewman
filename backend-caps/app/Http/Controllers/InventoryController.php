@@ -304,23 +304,23 @@ class InventoryController extends Controller
                 ->get();
 
             $lowStockProducts = $products->filter(function ($product) use ($branchId) {
-                return $product->isLowStock($branchId) || $product->isOutOfStock($branchId);
+                return $product->isLowStock($branchId, 10) || $product->isOutOfStock($branchId);
             })->map(function ($product) use ($branchId) {
                 $currentStock = $product->getCurrentStock($branchId);
-                $stockStatus = $product->getStockStatusWithColor($branchId);
+                $stockStatus = $product->getStockStatusWithColor($branchId, 10);
                 
                 return [
                     'product_id' => $product->product_id,
                     'product_name' => $product->name,
                     'category' => $product->category,
                     'current_stock' => $currentStock,
-                    'low_stock_threshold' => $product->low_stock_threshold,
+                    'low_stock_threshold' => 10, // Default threshold
                     'product_unit' => $product->product_unit,
                     'sale_unit' => $product->sale_unit,
                     'base_price' => $product->base_price,
                     'stock_status' => $stockStatus['status'],
                     'stock_color' => $stockStatus['color'],
-                    'is_low_stock' => $product->isLowStock($branchId),
+                    'is_low_stock' => $product->isLowStock($branchId, 10),
                     'is_out_of_stock' => $product->isOutOfStock($branchId),
                     'urgency' => $product->isOutOfStock($branchId) ? 'critical' : 'warning'
                 ];
