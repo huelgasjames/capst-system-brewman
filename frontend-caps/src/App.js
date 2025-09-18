@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import { UnifiedAuthProvider } from './contexts/UnifiedAuthContext';
@@ -25,98 +23,9 @@ import Reporting from './pages/Reporting';
 import CustomerDisplay from './pages/CustomerDisplay';
 import KitchenDisplay from './pages/KitchenDisplay';
 
-// ✅ Coffee Shop Theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#8B4513', // Saddle Brown
-      light: '#A0522D', // Sienna
-      dark: '#654321', // Dark Brown
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#CD853F', // Peru
-      light: '#DEB887', // Burlywood
-      dark: '#A0522D', // Sienna
-      contrastText: '#fff',
-    },
-    background: {
-      default: '#F5F5DC', // Beige
-      paper: '#FAF0E6', // Linen
-    },
-    text: {
-      primary: '#2F2F2F',
-      secondary: '#666666',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
-      fontSize: '2.5rem',
-    },
-    h2: {
-      fontWeight: 600,
-      fontSize: '2rem',
-    },
-    h3: {
-      fontWeight: 600,
-      fontSize: '1.75rem',
-    },
-    h4: {
-      fontWeight: 500,
-      fontSize: '1.5rem',
-    },
-    h5: {
-      fontWeight: 500,
-      fontSize: '1.25rem',
-    },
-    h6: {
-      fontWeight: 500,
-      fontSize: '1rem',
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-        contained: {
-          boxShadow: '0 2px 8px rgba(139, 69, 19, 0.3)',
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(139, 69, 19, 0.4)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
-          },
-        },
-      },
-    },
-  },
-});
-
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <UnifiedAuthProvider>
+    <UnifiedAuthProvider>
         <Router>
           <Routes>
             {/* Public Routes */}
@@ -157,7 +66,6 @@ function App() {
           </Routes>
         </Router>
       </UnifiedAuthProvider>
-    </ThemeProvider>
   );
 }
 

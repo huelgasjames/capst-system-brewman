@@ -303,4 +303,25 @@ class BranchController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get total count of branches
+     */
+    public function getCount(): JsonResponse
+    {
+        try {
+            $totalBranches = Branch::count();
+            
+            return response()->json([
+                'success' => true,
+                'total_branches' => $totalBranches,
+                'message' => 'Branch count retrieved successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve branch count: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

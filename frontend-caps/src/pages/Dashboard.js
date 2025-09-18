@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -8,6 +8,7 @@ import {
   Avatar,
   Chip,
   Paper,
+  CircularProgress,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -17,9 +18,41 @@ import {
 import Header from '../components/Header';
 import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 import InventoryDashboardWidget from '../components/dashboard/InventoryDashboardWidget';
+import dashboardService from '../services/dashboardService';
 
 function Dashboard() {
   const { user } = useUnifiedAuth();
+  const [dashboardStats, setDashboardStats] = useState({
+    total_users: 0,
+    total_branches: 0,
+    loading: true,
+    error: null
+  });
+
+  // Fetch dashboard statistics on component mount
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setDashboardStats(prev => ({ ...prev, loading: true, error: null }));
+        const stats = await dashboardService.getDashboardStats();
+        setDashboardStats({
+          total_users: stats.total_users,
+          total_branches: stats.total_branches,
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+        setDashboardStats(prev => ({
+          ...prev,
+          loading: false,
+          error: error.message || 'Failed to load dashboard statistics'
+        }));
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
 
   const getRoleColor = (role) => {
     const colors = {
@@ -37,45 +70,45 @@ function Dashboard() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ bgcolor: 'background.default' }}>
       <Header />
       
       <Box sx={{ p: 3 }}>
         {/* Welcome Section */}
-        <Box sx={{ mb: 4, p: 4, bgcolor: 'rgba(139, 69, 19, 0.05)', borderRadius: 3, border: '1px solid rgba(139, 69, 19, 0.1)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
+        <Box sx={{ mb: 3, p: 2.5, bgcolor: 'rgba(139, 69, 19, 0.05)', borderRadius: 2, border: '1px solid rgba(139, 69, 19, 0.1)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <Avatar 
               sx={{ 
                 bgcolor: getRoleColor(user?.role),
-                width: 80,
-                height: 80,
-                border: '4px solid rgba(139, 69, 19, 0.2)',
+                width: 60,
+                height: 60,
+                border: '3px solid rgba(139, 69, 19, 0.2)',
               }}
             >
               {getRoleIcon(user?.role)}
             </Avatar>
             <Box>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}>
                 Welcome back, {user?.name}! 👋
               </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1.5 }}>
                 You are currently logged in as a <strong>{user?.role}</strong> with full access to the Brew Manager system.
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Chip
                   label={user?.email}
                   variant="outlined"
-                  size="medium"
-                  sx={{ borderColor: 'primary.main', color: 'primary.main', fontSize: '1rem' }}
+                  size="small"
+                  sx={{ borderColor: 'primary.main', color: 'primary.main', fontSize: '0.875rem' }}
                 />
                 <Chip
                   label={`Role: ${user?.role}`}
-                  size="medium"
+                  size="small"
                   sx={{
                     bgcolor: getRoleColor(user?.role),
                     color: 'white',
                     fontWeight: 'bold',
-                    fontSize: '1rem'
+                    fontSize: '0.875rem'
                   }}
                 />
               </Box>
@@ -84,24 +117,30 @@ function Dashboard() {
         </Box>
 
         {/* Quick Stats */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card elevation={2} sx={{ 
               height: '100%',
               background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 100%)',
               color: 'white',
             }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 48, height: 48 }}>
-                    <PersonIcon />
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
+                    <PersonIcon fontSize="small" />
                   </Avatar>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                       Users
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Manage system users
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      {dashboardStats.loading ? (
+                        <CircularProgress size={16} sx={{ color: 'white' }} />
+                      ) : dashboardStats.error ? (
+                        'Error loading'
+                      ) : (
+                        `Total: ${dashboardStats.total_users}`
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -115,17 +154,23 @@ function Dashboard() {
               background: 'linear-gradient(135deg, #A0522D 0%, #CD853F 100%)',
               color: 'white',
             }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 48, height: 48 }}>
-                    <AdminIcon />
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
+                    <AdminIcon fontSize="small" />
                   </Avatar>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                       Branches
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      Manage locations
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                      {dashboardStats.loading ? (
+                        <CircularProgress size={16} sx={{ color: 'white' }} />
+                      ) : dashboardStats.error ? (
+                        'Error loading'
+                      ) : (
+                        `Total: ${dashboardStats.total_branches}`
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -139,16 +184,16 @@ function Dashboard() {
               background: 'linear-gradient(135deg, #CD853F 0%, #DEB887 100%)',
               color: 'white',
             }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 48, height: 48 }}>
-                    <DashboardIcon />
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
+                    <DashboardIcon fontSize="small" />
                   </Avatar>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                       Products
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Menu management
                     </Typography>
                   </Box>
@@ -163,16 +208,16 @@ function Dashboard() {
               background: 'linear-gradient(135deg, #DEB887 0%, #F5DEB3 100%)',
               color: 'white',
             }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 48, height: 48 }}>
-                    <PersonIcon />
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
+                    <PersonIcon fontSize="small" />
                   </Avatar>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                       Reports
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       Analytics & insights
                     </Typography>
                   </Box>

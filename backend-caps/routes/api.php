@@ -133,6 +133,7 @@ Route::get('/user/check-auth', [AuthController::class, 'checkUserAuth'])->middle
 Route::middleware(['admin.token'])->group(function () {
     // User Management CRUD
     Route::get('/users', [UserController::class, 'index']);       // Get all users
+    Route::get('/users/count', [UserController::class, 'getCount']); // Get user count
     Route::post('/users', [UserController::class, 'store']);      // Create new user
     Route::get('/users/{id}', [UserController::class, 'show']);   // Get user by ID
     Route::put('/users/{id}', [UserController::class, 'update']); // Update user
@@ -140,6 +141,7 @@ Route::middleware(['admin.token'])->group(function () {
 
     // Branch Management CRUD
     Route::get('/branches', [BranchController::class, 'index']);           // Get all branches
+    Route::get('/branches/count', [BranchController::class, 'getCount']);  // Get branch count
     Route::post('/branches', [BranchController::class, 'store']);          // Create new branch
     Route::get('/branches/{id}', [BranchController::class, 'show']);       // Get branch by ID
     Route::put('/branches/{id}', [BranchController::class, 'update']);     // Update branch

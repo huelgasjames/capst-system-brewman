@@ -70,6 +70,7 @@ const Header = () => {
       sx={{
         background: 'linear-gradient(90deg, #8B4513 0%, #A0522D 100%)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        zIndex: 1200,
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>

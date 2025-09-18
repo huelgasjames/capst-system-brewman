@@ -20,7 +20,9 @@ function DashboardLayout() {
           sx={{
             flex: 1,
             backgroundColor: 'background.default',
-           // overflow: 'auto',
+            overflow: 'auto',
+            margin: 0,
+            padding: 0,
           }}
         >
           <Outlet />
