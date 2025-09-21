@@ -90,7 +90,7 @@ function Login() {
         alignItems: 'center',
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #CD853F 100%)',
-        p: 2,
+        p: 0,
         position: 'relative',
         overflow: 'hidden',
         '&::before': {

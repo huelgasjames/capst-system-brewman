@@ -73,15 +73,15 @@ const Header = () => {
         zIndex: 1200,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
+      <Toolbar sx={{ justifyContent: 'space-between', minHeight: '64px !important', px: 3 }}>
         {/* Logo and Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             component="img"
             src={BMLogo}
             alt="BrewManager Logo"
             sx={{
-              height: 40,
+              height: 32,
               width: 'auto',
               filter: 'brightness(0) invert(1)', // Makes logo white
             }}
@@ -92,6 +92,7 @@ const Header = () => {
             sx={{ 
               fontWeight: 'bold',
               color: 'white',
+              fontSize: '1.5rem',
               textShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
           >
@@ -99,15 +100,15 @@ const Header = () => {
           </Typography>
         </Box>
 
-        {/* Admin Info and Menu */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* Admin Info Display */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* User Info and Menu */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {/* User Info Display */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar 
               sx={{ 
                 bgcolor: 'rgba(255, 255, 255, 0.2)',
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 border: '2px solid rgba(255, 255, 255, 0.3)',
               }}
             >
@@ -120,6 +121,7 @@ const Header = () => {
                 sx={{ 
                   color: 'white',
                   fontWeight: 600,
+                  fontSize: '1rem',
                   lineHeight: 1.2,
                 }}
               >
@@ -133,33 +135,36 @@ const Header = () => {
                   color: 'white',
                   fontWeight: 'bold',
                   fontSize: '0.75rem',
-                  height: 20,
+                  height: 22,
+                  mt: 0.5,
                 }}
               />
             </Box>
           </Box>
 
-          <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255, 255, 255, 0.3)' }} />
+          <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255, 255, 255, 0.3)', height: 24 }} />
 
-          {/* Admin Menu */}
+          {/* User Menu */}
           <IconButton
-            size="large"
-            aria-label="admin menu"
-            aria-controls="admin-menu"
+            size="medium"
+            aria-label="user menu"
+            aria-controls="user-menu"
             aria-haspopup="true"
             onClick={handleMenu}
             sx={{ 
               color: 'white',
+              width: 36,
+              height: 36,
               '&:hover': {
                 bgcolor: 'rgba(255, 255, 255, 0.1)',
               }
             }}
           >
-            <AccountCircle />
+            <AccountCircle fontSize="small" />
           </IconButton>
           
           <Menu
-            id="admin-menu"
+            id="user-menu"
             anchorEl={anchorEl}
             anchorOrigin={{
               vertical: 'bottom',

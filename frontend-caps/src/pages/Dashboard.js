@@ -70,10 +70,27 @@ function Dashboard() {
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.default' }}>
+    <Box sx={{ 
+      bgcolor: 'transparent', 
+      margin: 0, 
+      padding: 0,
+      border: 'none',
+      outline: 'none',
+      boxShadow: 'none',
+      width: '100%',
+      height: '100%'
+    }}>
       <Header />
       
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ 
+        p: 0, 
+        margin: 0,
+        border: 'none',
+        outline: 'none',
+        boxShadow: 'none',
+        backgroundColor: 'transparent',
+        width: '100%'
+      }}>
         {/* Welcome Section */}
         <Box sx={{ mb: 3, p: 2.5, bgcolor: 'rgba(139, 69, 19, 0.05)', borderRadius: 2, border: '1px solid rgba(139, 69, 19, 0.1)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>

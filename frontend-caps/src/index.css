@@ -17,11 +17,48 @@
 
 body {
   margin: 0;
+  padding: 0;
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   background-color: var(--background-color);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove any default margins and borders */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background-color: transparent !important;
+}
+
+/* Force remove all borders and backgrounds */
+.MuiBox-root,
+.MuiContainer-root,
+.MuiPaper-root,
+.MuiCard-root,
+main,
+section,
+div {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove Material-UI default backgrounds */
+.MuiAppBar-root {
+  background: linear-gradient(90deg, #8B4513 0%, #A0522D 100%) !important;
+}
+
+/* Ensure no white backgrounds */
+body, html, #root, .MuiBox-root {
+  background-color: transparent !important;
 }
 
 code {
